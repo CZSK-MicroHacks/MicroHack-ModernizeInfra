@@ -1,0 +1,9 @@
+**/.git
+**/.gitignore
+**/.vscode
+**/.vs
+**/bin
+**/obj
+**/*.md
+**/docker-compose.yml
+**/sql-scripts
