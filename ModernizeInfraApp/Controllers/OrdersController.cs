@@ -38,6 +38,22 @@ public class OrdersController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Order>> PostOrder(Order order)
     {
+        // Validate input
+        if (order.CustomerId <= 0)
+        {
+            return BadRequest("Valid CustomerId is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(order.ProductName))
+        {
+            return BadRequest("Product name is required.");
+        }
+
+        if (order.Amount <= 0)
+        {
+            return BadRequest("Amount must be greater than zero.");
+        }
+
         order.OrderDate = DateTime.UtcNow;
         _context.Orders.Add(order);
         await _context.SaveChangesAsync();

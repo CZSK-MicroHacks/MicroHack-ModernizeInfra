@@ -38,6 +38,23 @@ public class CustomersController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Customer>> PostCustomer(Customer customer)
     {
+        // Validate input
+        if (string.IsNullOrWhiteSpace(customer.Name))
+        {
+            return BadRequest("Customer name is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(customer.Email))
+        {
+            return BadRequest("Customer email is required.");
+        }
+
+        // Basic email format validation
+        if (!customer.Email.Contains("@") || !customer.Email.Contains("."))
+        {
+            return BadRequest("Invalid email format.");
+        }
+
         customer.CreatedDate = DateTime.UtcNow;
         _context.Customers.Add(customer);
         await _context.SaveChangesAsync();

@@ -21,10 +21,11 @@ END
 GO
 
 -- Create linked server from sqlserver1 to sqlserver2
+-- Note: Using MSOLEDBSQL provider for SQL Server 2022 compatibility
 EXEC sp_addlinkedserver 
     @server = 'SQLSERVER2_LINK',
     @srvproduct = '',
-    @provider = 'SQLNCLI',
+    @provider = 'MSOLEDBSQL',
     @datasrc = 'sqlserver2,1433';
 GO
 

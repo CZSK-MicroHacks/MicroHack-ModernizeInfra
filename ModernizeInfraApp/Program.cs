@@ -8,6 +8,8 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
 // Configure database contexts for two separate databases
+// NOTE: Connection strings contain hardcoded credentials for development/demo purposes only.
+// For production, use environment variables, Azure Key Vault, or other secure secrets management.
 builder.Services.AddDbContext<CustomerDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("CustomerDatabase") ?? 
@@ -27,6 +29,8 @@ if (app.Environment.IsDevelopment())
 }
 
 // Initialize databases
+// NOTE: EnsureCreatedAsync is used for demo/development simplicity.
+// For production, use EF Core Migrations (dotnet ef migrations) for proper schema version control.
 using (var scope = app.Services.CreateScope())
 {
     var customerDb = scope.ServiceProvider.GetRequiredService<CustomerDbContext>();
