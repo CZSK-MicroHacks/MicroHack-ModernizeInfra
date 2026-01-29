@@ -1,0 +1,6 @@
+@ModernizeInfraApp_HostAddress = http://localhost:5069
+
+GET {{ModernizeInfraApp_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,2 +1,197 @@
 # MicroHack-ModernizeInfra
-Repository for CZ/SK MicroHack Infra Modernization
+
+Repository for CZ/SK MicroHack Infrastructure Modernization
+
+## Architecture
+
+This repository contains a modern infrastructure setup for app modernization, featuring:
+
+- **.NET 10 Web API Application** - A modern ASP.NET Core web API server
+- **Two SQL Server Databases** - Customer and Order databases running in separate containers
+- **Database Links** - Configured linked servers for cross-database queries
+
+## Components
+
+### 1. .NET 10 Application Server
+- ASP.NET Core Web API with .NET 10
+- Entity Framework Core 10.0 for database access
+- RESTful API endpoints for Customers and Orders
+- OpenAPI/Swagger documentation
+
+### 2. SQL Server Databases
+
+#### Database 1: CustomerDB (sqlserver1)
+- Stores customer information
+- Port: 1433
+- Tables: Customers
+
+#### Database 2: OrderDB (sqlserver2)
+- Stores order information
+- Port: 1434 (mapped from container port 1433)
+- Tables: Orders
+
+### 3. Database Links
+- Linked server from sqlserver1 to sqlserver2
+- Enables cross-database queries
+- Includes a view (`vw_CustomerOrders`) demonstrating linked server usage
+
+## Prerequisites
+
+- Docker and Docker Compose
+- .NET 10 SDK (for local development)
+
+## Quick Start
+
+### Using Docker Compose (Recommended)
+
+1. Clone the repository:
+```bash
+git clone https://github.com/CZSK-MicroHacks/MicroHack-ModernizeInfra.git
+cd MicroHack-ModernizeInfra
+```
+
+2. Start all services:
+```bash
+docker-compose up -d
+```
+
+3. Wait for all services to be healthy (about 30-60 seconds):
+```bash
+docker-compose ps
+```
+
+4. Access the application:
+- API Base URL: http://localhost:8080
+- OpenAPI Documentation: http://localhost:8080/openapi/v1.json
+
+### Local Development
+
+1. Ensure .NET 10 SDK is installed:
+```bash
+dotnet --version
+```
+
+2. Navigate to the application directory:
+```bash
+cd ModernizeInfraApp
+```
+
+3. Restore dependencies:
+```bash
+dotnet restore
+```
+
+4. Run the application:
+```bash
+dotnet run
+```
+
+## API Endpoints
+
+### Customers API
+- `GET /api/customers` - Get all customers
+- `GET /api/customers/{id}` - Get customer by ID
+- `POST /api/customers` - Create new customer
+- `PUT /api/customers/{id}` - Update customer
+- `DELETE /api/customers/{id}` - Delete customer
+
+### Orders API
+- `GET /api/orders` - Get all orders
+- `GET /api/orders/{id}` - Get order by ID
+- `POST /api/orders` - Create new order
+- `PUT /api/orders/{id}` - Update order
+- `DELETE /api/orders/{id}` - Delete order
+
+## Database Links
+
+The setup includes a linked server configuration that allows querying across both databases. A view `vw_CustomerOrders` is created in the CustomerDB that joins data from both databases:
+
+```sql
+-- Example query using the linked server view
+USE CustomerDB;
+SELECT * FROM vw_CustomerOrders;
+```
+
+## Testing the Setup
+
+### Test API Endpoints
+
+```bash
+# Create a customer
+curl -X POST http://localhost:8080/api/customers \
+  -H "Content-Type: application/json" \
+  -d '{"name":"John Doe","email":"john@example.com"}'
+
+# Get all customers
+curl http://localhost:8080/api/customers
+
+# Create an order
+curl -X POST http://localhost:8080/api/orders \
+  -H "Content-Type: application/json" \
+  -d '{"customerId":1,"productName":"Laptop","amount":999.99}'
+
+# Get all orders
+curl http://localhost:8080/api/orders
+```
+
+### Test Database Links
+
+Connect to sqlserver1 and query the cross-database view:
+
+```bash
+docker exec -it sqlserver1 /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'YourStrong@Passw0rd' -C -Q "USE CustomerDB; SELECT * FROM vw_CustomerOrders;"
+```
+
+## Stopping the Services
+
+```bash
+docker-compose down
+```
+
+To also remove the volumes (databases will be deleted):
+```bash
+docker-compose down -v
+```
+
+## Configuration
+
+### Database Connection Strings
+
+Connection strings are configured in `appsettings.json` and can be overridden via environment variables:
+
+```json
+{
+  "ConnectionStrings": {
+    "CustomerDatabase": "Server=sqlserver1,1433;Database=CustomerDB;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;",
+    "OrderDatabase": "Server=sqlserver2,1433;Database=OrderDB;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;"
+  }
+}
+```
+
+### Security Notes
+
+⚠️ **Important**: The default SQL Server password (`YourStrong@Passw0rd`) is for development only. Change it for production use.
+
+## Troubleshooting
+
+### Services not starting
+Check the logs:
+```bash
+docker-compose logs
+```
+
+### Database connection issues
+Verify SQL Server containers are healthy:
+```bash
+docker-compose ps
+```
+
+### Database link issues
+Check the db-link-setup logs:
+```bash
+docker-compose logs db-link-setup
+```
+
+## License
+
+This project is for educational purposes as part of the CZ/SK MicroHack program.
