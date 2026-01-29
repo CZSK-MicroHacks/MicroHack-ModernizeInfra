@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # First SQL Server Database (Customer DB)
   sqlserver1:
