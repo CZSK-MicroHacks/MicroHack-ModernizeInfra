@@ -73,6 +73,10 @@ NSG_NAME="${VM_NAME}-nsg"
 PUBLIC_IP_NAME="${VM_NAME}-pip"
 NIC_NAME="${VM_NAME}-nic"
 
+# Generate a valid Windows computer name (max 15 chars, no special chars)
+# Remove hyphens and truncate to 15 characters
+COMPUTER_NAME=$(echo "$VM_NAME" | sed 's/-//g' | cut -c1-15)
+
 echo ""
 echo "=================================================="
 echo "Deployment Configuration:"
@@ -80,6 +84,7 @@ echo "=================================================="
 echo "Resource Group: ${RESOURCE_GROUP}"
 echo "Location: ${LOCATION}"
 echo "VM Name: ${VM_NAME}"
+echo "Computer Name: ${COMPUTER_NAME}"
 echo "VM Size: ${DEFAULT_VM_SIZE}"
 echo "Admin Username: ${ADMIN_USERNAME}"
 echo "=================================================="
@@ -201,6 +206,7 @@ echo -e "${YELLOW}Creating Windows Server VM (this may take a few minutes)...${N
 az vm create \
     --resource-group "$RESOURCE_GROUP" \
     --name "$VM_NAME" \
+    --computer-name "$COMPUTER_NAME" \
     --location "$LOCATION" \
     --nics "$NIC_NAME" \
     --image "MicrosoftWindowsServer:WindowsServer:2022-datacenter-azure-edition:latest" \
