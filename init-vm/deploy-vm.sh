@@ -307,6 +307,7 @@ for script_file in "$SCRIPT_DIR"/*.ps1; do
             --container-name "$CONTAINER_NAME" \
             --name "$filename" \
             --file "$script_file" \
+            --overwrite \
             --output none
     fi
 done
