@@ -101,7 +101,7 @@ This script will:
 
 **Parameters you'll be prompted for:**
 - Resource Group Name (default: rg-modernize-hackathon)
-- Location (default: eastus)
+- Location (default: swedencentral)
 - VM Name (default: vm-onprem-simulator)
 - Admin Username
 - Admin Password (must meet complexity requirements)
@@ -299,7 +299,7 @@ For a production-ready setup:
 
 ## Cost Estimation
 
-Approximate Azure costs (East US region):
+Approximate Azure costs (Sweden Central region):
 - **VM (Standard_D4s_v3)**: ~$0.192/hour (~$140/month)
 - **Managed Disk (128 GB Premium)**: ~$25/month
 - **Public IP**: ~$3.65/month

@@ -81,7 +81,7 @@ Ensure you have permissions to create:
 
 4. **Provide the requested information when prompted:**
    - Resource Group Name: (default: rg-modernize-hackathon)
-   - Location: (default: eastus)
+   - Location: (default: swedencentral)
    - VM Name: (default: vm-onprem-simulator)
    - Admin Username: (e.g., azureuser)
    - Admin Password: (must meet complexity requirements - minimum 12 characters, uppercase, lowercase, number, special character)
@@ -300,7 +300,7 @@ For fully automated deployment using Azure VM Custom Script Extension:
    az storage account create \
      --name scriptstorage$RANDOM \
      --resource-group rg-modernize-hackathon \
-     --location eastus \
+     --location swedencentral \
      --sku Standard_LRS
    ```
 
