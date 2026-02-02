@@ -2,6 +2,12 @@
 
 Repository for CZ/SK MicroHack Infrastructure Modernization
 
+## Overview
+
+This repository contains:
+1. **Modern Infrastructure Application** - .NET 10 Web API with SQL Server databases running in Docker
+2. **On-Premises Simulator** - Azure VM deployment scripts to simulate legacy on-premises environment
+
 ## Architecture
 
 This repository contains a modern infrastructure setup for app modernization, featuring:
@@ -191,6 +197,40 @@ Check the db-link-setup logs:
 ```bash
 docker-compose logs db-link-setup
 ```
+
+## On-Premises Environment Simulator
+
+For the Migrate and Modernize hackathon, you can deploy a Windows Azure VM that simulates an on-premises environment with SQL Server and the application running directly on the VM (not in containers).
+
+This simulated on-premises environment serves as the starting point for migration exercises.
+
+### Quick Start for On-Premises Simulator
+
+```bash
+cd init-vm
+./deploy-vm.sh
+```
+
+See the [init-vm/README.md](./init-vm/README.md) for complete documentation on:
+- Deploying the Azure VM
+- Installing SQL Server instances
+- Setting up linked servers
+- Deploying the application
+- Student access instructions
+
+### What Gets Deployed
+
+The on-premises simulator creates:
+- Windows Server 2022 Azure VM
+- SQL Server 2022 with two instances (ports 1433 and 1434)
+- CustomerDB and OrderDB with sample data
+- Linked server configuration
+- ASP.NET Core application running on the VM
+
+This environment allows students to:
+1. Explore a legacy on-premises setup
+2. Plan migration strategies
+3. Practice migrating to Azure services (Azure SQL, App Service, etc.)
 
 ## License
 
