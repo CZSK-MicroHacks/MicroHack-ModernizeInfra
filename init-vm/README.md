@@ -70,10 +70,15 @@ Before running the deployment scripts, ensure you have:
    - Network Security Groups
    - Public IP addresses
    - Virtual Networks
+   - Storage Accounts
 
-3. **Resource Group** (will be created if it doesn't exist)
+3. **Azure RBAC Roles** for Azure AD authentication:
+   - **Storage Blob Data Contributor** role on the storage account (or subscription) for uploading blobs
+   - The script uses Azure AD authentication instead of storage account keys for enhanced security
 
-4. **SSH Key or Password** for VM access (script will prompt)
+4. **Resource Group** (will be created if it doesn't exist)
+
+5. **SSH Key or Password** for VM access (script will prompt)
 
 ## Quick Start
 
@@ -90,7 +95,8 @@ This script will:
 - Deploy a Windows Server 2022 VM
 - Configure network security rules (RDP, HTTP, SQL Server ports)
 - Create an Azure Storage Account for hosting installation scripts
-- Upload PowerShell scripts to Blob Storage with secure SAS token access
+- Upload PowerShell scripts to Blob Storage using Azure AD authentication (no storage keys required)
+- Generate user delegation SAS token for secure script access
 - Install Custom Script Extension to automatically run setup scripts
 
 **Parameters you'll be prompted for:**
@@ -145,7 +151,8 @@ Main deployment script using Azure CLI to:
 - Deploy Windows Server 2022 VM
 - Configure networking and security
 - Create Azure Storage Account for hosting scripts
-- Upload PowerShell scripts to Blob Storage with private access and SAS token authentication
+- Upload PowerShell scripts to Blob Storage using Azure AD authentication with private access
+- Generate user delegation SAS token (Azure AD-based) for secure script access
 - Install Custom Script Extension to automatically execute setup scripts
 
 ### 2. `scripts/install-sql-server.ps1`
