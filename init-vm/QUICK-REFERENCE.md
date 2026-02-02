@@ -5,23 +5,34 @@
 ### Deployment
 
 ```bash
-# Deploy VM
+# Deploy VM (creates storage account and installs extension automatically)
 cd init-vm
 ./deploy-vm.sh
 
 # Check VM status
 az vm show --resource-group rg-modernize-hackathon --name vm-onprem-simulator --query "provisioningState"
 
+# Check Custom Script Extension status (automated setup)
+az vm extension list --resource-group rg-modernize-hackathon --vm-name vm-onprem-simulator --query "[].{Name:name, State:provisioningState}" -o table
+
 # Get VM public IP
 az vm show --resource-group rg-modernize-hackathon --name vm-onprem-simulator --show-details --query "publicIps" -o tsv
+
+# Get storage account name
+az storage account list --resource-group rg-modernize-hackathon --query "[0].name" -o tsv
 ```
 
-### On VM - Setup
+### On VM - Setup (Optional - already done automatically)
+
+**Note: Setup is automated via Custom Script Extension. These commands are only needed if you want to re-run setup manually.**
 
 ```powershell
-# Run automated setup
+# View automated setup logs
+Get-Content C:\Temp\setup-log.txt
+
+# Re-run automated setup manually (if needed)
 Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope Process -Force
-cd C:\Setup\scripts
+cd C:\Windows\Temp  # Scripts downloaded by extension
 .\setup-all.ps1
 
 # Or run individual steps
@@ -108,11 +119,14 @@ az group delete --name rg-modernize-hackathon --yes --no-wait
 | VM Name | vm-onprem-simulator |
 | VM Size | Standard_D4s_v3 |
 | OS | Windows Server 2022 |
+| Storage Account | Auto-generated (st<rg-name><random>) |
+| Storage Container | scripts (private with SAS token access) |
 | SQL Instance 1 | localhost,1433 |
 | SQL Instance 2 | localhost,1434 |
 | SA Password | YourStrongPass123! |
 | App Port | 8080 |
 | Linked Server | MSSQL2_LINK |
+| Custom Script Extension | Automatically installed |
 
 ## Ports
 
@@ -147,9 +161,10 @@ Server=localhost,1434;Database=OrderDB;User Id=sa;Password=YourStrongPass123!;Tr
 | Path | Description |
 |------|-------------|
 | C:\Apps\ModernizeInfraApp | Application files |
-| C:\Setup\scripts | Setup scripts |
+| C:\Windows\Temp | Scripts downloaded by Custom Script Extension |
 | C:\Temp\setup-log.txt | Setup log file |
 | C:\Temp\SQLServer | SQL Server installation files |
+| C:\WindowsAzure\Logs\Plugins\Microsoft.Compute.CustomScriptExtension\ | Extension logs |
 
 ## Useful Azure CLI Commands
 

@@ -103,9 +103,46 @@ Ensure you have permissions to create:
    Password: <ADMIN-PASSWORD>
    ```
 
-## Manual Configuration
+## Automated Configuration (Default Behavior)
 
-Once connected to the VM via RDP, you need to configure the SQL Server instances and application.
+**No RDP connection needed!** The deploy-vm.sh script automatically configures the VM using Azure Custom Script Extension.
+
+### How It Works
+
+1. **Storage Account Creation**
+   - The deployment script creates an Azure Storage Account
+   - A blob container named "scripts" is created with private access (no public access)
+   - SAS token with read permissions is generated for secure access (valid for 24 hours)
+   
+2. **Script Upload**
+   - All PowerShell setup scripts are automatically uploaded to the blob container
+   - Scripts include: setup-all.ps1, install-sql-server.ps1, setup-databases.ps1, setup-linked-servers.ps1, deploy-application.ps1
+   - Scripts are accessed using secure SAS tokens passed in protected settings
+
+3. **Custom Script Extension**
+   - Automatically installed on the VM after creation
+   - Downloads scripts from blob storage using SAS token authentication
+   - Executes setup-all.ps1 which orchestrates the entire setup
+   - Uses `-ExecutionPolicy Bypass` for secure script execution
+   - Runs without requiring any RDP connection
+
+4. **Monitoring Progress**
+   ```bash
+   # Check extension provisioning status
+   az vm extension list \
+     --resource-group rg-modernize-hackathon \
+     --vm-name vm-onprem-simulator \
+     --query "[].{Name:name, State:provisioningState}"
+   
+   # Check detailed extension logs (requires RDP to VM)
+   # Logs located at: C:\WindowsAzure\Logs\Plugins\Microsoft.Compute.CustomScriptExtension\
+   ```
+
+The entire setup process takes approximately 20-30 minutes and requires no manual intervention.
+
+## Manual Configuration (Alternative Method)
+
+If you need to manually configure the VM or troubleshoot issues, you can connect via RDP.
 
 ### Option 1: Automated Setup (Recommended)
 
