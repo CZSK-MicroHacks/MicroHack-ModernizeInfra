@@ -266,18 +266,12 @@ az storage account create \
 
 echo -e "${GREEN}✓ Storage account created: ${STORAGE_ACCOUNT_NAME}${NC}"
 
-# Get storage account key
-STORAGE_KEY=$(az storage account keys list \
-    --resource-group "$RESOURCE_GROUP" \
-    --account-name "$STORAGE_ACCOUNT_NAME" \
-    --query "[0].value" -o tsv)
-
-# Create container (private access only)
+# Create container (private access only) using Azure AD authentication
 echo -e "${YELLOW}Creating blob container...${NC}"
 az storage container create \
     --name "$CONTAINER_NAME" \
     --account-name "$STORAGE_ACCOUNT_NAME" \
-    --account-key "$STORAGE_KEY" \
+    --auth-mode login \
     --public-access off \
     --output none
 
@@ -293,7 +287,7 @@ for script_file in "$SCRIPT_DIR"/*.ps1; do
         echo "  Uploading $filename..."
         az storage blob upload \
             --account-name "$STORAGE_ACCOUNT_NAME" \
-            --account-key "$STORAGE_KEY" \
+            --auth-mode login \
             --container-name "$CONTAINER_NAME" \
             --name "$filename" \
             --file "$script_file" \
@@ -303,18 +297,21 @@ done
 
 echo -e "${GREEN}✓ Scripts uploaded successfully${NC}"
 
-# Generate SAS token for secure access (valid for 24 hours)
-echo -e "${YELLOW}Generating SAS token for secure script access...${NC}"
+# Generate user delegation SAS token for secure access (valid for 24 hours, Azure AD-based)
+echo -e "${YELLOW}Generating user delegation SAS token for secure script access...${NC}"
 EXPIRY_DATE=$(date -u -d "24 hours" '+%Y-%m-%dT%H:%MZ' 2>/dev/null || date -u -v+24H '+%Y-%m-%dT%H:%MZ' 2>/dev/null)
+START_DATE=$(date -u '+%Y-%m-%dT%H:%MZ')
 SAS_TOKEN=$(az storage container generate-sas \
     --account-name "$STORAGE_ACCOUNT_NAME" \
-    --account-key "$STORAGE_KEY" \
     --name "$CONTAINER_NAME" \
     --permissions r \
     --expiry "$EXPIRY_DATE" \
+    --start "$START_DATE" \
+    --auth-mode login \
+    --as-user \
     --output tsv)
 
-echo -e "${GREEN}✓ SAS token generated (valid for 24 hours)${NC}"
+echo -e "${GREEN}✓ User delegation SAS token generated (valid for 24 hours, Azure AD-based)${NC}"
 
 # Get blob URLs with SAS token
 SETUP_ALL_URL="https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/${CONTAINER_NAME}/setup-all.ps1?${SAS_TOKEN}"
