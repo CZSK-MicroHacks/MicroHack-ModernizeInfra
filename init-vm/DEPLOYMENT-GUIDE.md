@@ -111,16 +111,19 @@ Ensure you have permissions to create:
 
 1. **Storage Account Creation**
    - The deployment script creates an Azure Storage Account
-   - A blob container named "scripts" is created with public read access
+   - A blob container named "scripts" is created with private access (no public access)
+   - SAS token with read permissions is generated for secure access (valid for 24 hours)
    
 2. **Script Upload**
    - All PowerShell setup scripts are automatically uploaded to the blob container
    - Scripts include: setup-all.ps1, install-sql-server.ps1, setup-databases.ps1, setup-linked-servers.ps1, deploy-application.ps1
+   - Scripts are accessed using secure SAS tokens passed in protected settings
 
 3. **Custom Script Extension**
    - Automatically installed on the VM after creation
-   - Downloads scripts from the blob storage
+   - Downloads scripts from blob storage using SAS token authentication
    - Executes setup-all.ps1 which orchestrates the entire setup
+   - Uses `-ExecutionPolicy Bypass` for secure script execution
    - Runs without requiring any RDP connection
 
 4. **Monitoring Progress**

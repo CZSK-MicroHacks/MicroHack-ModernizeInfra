@@ -243,7 +243,16 @@ PUBLIC_IP=$(az network public-ip show \
 
 # Create storage account for scripts
 echo -e "${YELLOW}Creating storage account for installation scripts...${NC}"
-STORAGE_ACCOUNT_NAME="st$(echo "$RESOURCE_GROUP" | tr -cd '[:alnum:]' | tr '[:upper:]' '[:lower:]' | cut -c1-20)$(date +%s | cut -c6-10)"
+# Generate a valid storage account name (3-24 chars, lowercase letters and numbers only)
+# Format: st + sanitized resource group name + random suffix
+RG_SANITIZED=$(echo "$RESOURCE_GROUP" | tr -cd '[:alnum:]' | tr '[:upper:]' '[:lower:]')
+RANDOM_SUFFIX=$(date +%s%N | md5sum | head -c 6)
+STORAGE_ACCOUNT_NAME="st${RG_SANITIZED:0:12}${RANDOM_SUFFIX}"
+# Ensure name is at least 3 characters and at most 24 characters
+STORAGE_ACCOUNT_NAME="${STORAGE_ACCOUNT_NAME:0:24}"
+if [ ${#STORAGE_ACCOUNT_NAME} -lt 3 ]; then
+    STORAGE_ACCOUNT_NAME="stmodernize${RANDOM_SUFFIX}"
+fi
 CONTAINER_NAME="scripts"
 
 az storage account create \
@@ -252,7 +261,7 @@ az storage account create \
     --location "$LOCATION" \
     --sku Standard_LRS \
     --kind StorageV2 \
-    --allow-blob-public-access true \
+    --allow-blob-public-access false \
     --output none
 
 echo -e "${GREEN}✓ Storage account created: ${STORAGE_ACCOUNT_NAME}${NC}"
@@ -263,13 +272,13 @@ STORAGE_KEY=$(az storage account keys list \
     --account-name "$STORAGE_ACCOUNT_NAME" \
     --query "[0].value" -o tsv)
 
-# Create container
+# Create container (private access only)
 echo -e "${YELLOW}Creating blob container...${NC}"
 az storage container create \
     --name "$CONTAINER_NAME" \
     --account-name "$STORAGE_ACCOUNT_NAME" \
     --account-key "$STORAGE_KEY" \
-    --public-access blob \
+    --public-access off \
     --output none
 
 echo -e "${GREEN}✓ Container created${NC}"
@@ -294,23 +303,36 @@ done
 
 echo -e "${GREEN}✓ Scripts uploaded successfully${NC}"
 
-# Get blob URLs
-SETUP_ALL_URL="https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/${CONTAINER_NAME}/setup-all.ps1"
-INSTALL_SQL_URL="https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/${CONTAINER_NAME}/install-sql-server.ps1"
-SETUP_DATABASES_URL="https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/${CONTAINER_NAME}/setup-databases.ps1"
-SETUP_LINKED_URL="https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/${CONTAINER_NAME}/setup-linked-servers.ps1"
-DEPLOY_APP_URL="https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/${CONTAINER_NAME}/deploy-application.ps1"
+# Generate SAS token for secure access (valid for 24 hours)
+echo -e "${YELLOW}Generating SAS token for secure script access...${NC}"
+EXPIRY_DATE=$(date -u -d "24 hours" '+%Y-%m-%dT%H:%MZ' 2>/dev/null || date -u -v+24H '+%Y-%m-%dT%H:%MZ' 2>/dev/null)
+SAS_TOKEN=$(az storage container generate-sas \
+    --account-name "$STORAGE_ACCOUNT_NAME" \
+    --account-key "$STORAGE_KEY" \
+    --name "$CONTAINER_NAME" \
+    --permissions r \
+    --expiry "$EXPIRY_DATE" \
+    --output tsv)
+
+echo -e "${GREEN}✓ SAS token generated (valid for 24 hours)${NC}"
+
+# Get blob URLs with SAS token
+SETUP_ALL_URL="https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/${CONTAINER_NAME}/setup-all.ps1?${SAS_TOKEN}"
+INSTALL_SQL_URL="https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/${CONTAINER_NAME}/install-sql-server.ps1?${SAS_TOKEN}"
+SETUP_DATABASES_URL="https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/${CONTAINER_NAME}/setup-databases.ps1?${SAS_TOKEN}"
+SETUP_LINKED_URL="https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/${CONTAINER_NAME}/setup-linked-servers.ps1?${SAS_TOKEN}"
+DEPLOY_APP_URL="https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/${CONTAINER_NAME}/deploy-application.ps1?${SAS_TOKEN}"
 
 # Install Custom Script Extension
 echo -e "${YELLOW}Installing Custom Script Extension...${NC}"
+# Note: Using Bypass instead of Unrestricted for better security
 az vm extension set \
     --resource-group "$RESOURCE_GROUP" \
     --vm-name "$VM_NAME" \
     --name CustomScriptExtension \
     --publisher Microsoft.Compute \
     --version 1.10 \
-    --settings "{\"fileUris\":[\"$SETUP_ALL_URL\",\"$INSTALL_SQL_URL\",\"$SETUP_DATABASES_URL\",\"$SETUP_LINKED_URL\",\"$DEPLOY_APP_URL\"]}" \
-    --protected-settings "{\"commandToExecute\":\"powershell -ExecutionPolicy Unrestricted -Command \\\"\\\$env:AUTOMATION_MODE='true'; & .\\\\setup-all.ps1\\\"\"}" \
+    --protected-settings "{\"fileUris\":[\"$SETUP_ALL_URL\",\"$INSTALL_SQL_URL\",\"$SETUP_DATABASES_URL\",\"$SETUP_LINKED_URL\",\"$DEPLOY_APP_URL\"],\"commandToExecute\":\"powershell -ExecutionPolicy Bypass -Command \\\"\\\$env:AUTOMATION_MODE='true'; & .\\\\setup-all.ps1\\\"\"}" \
     --output none
 
 echo -e "${GREEN}✓ Custom Script Extension installed${NC}"

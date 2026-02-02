@@ -6,7 +6,7 @@ This directory contains Azure CLI scripts and PowerShell configurations to deplo
 
 The init-vm setup creates:
 - **Windows Server 2022 Azure VM** - Simulates on-premises infrastructure
-- **Azure Storage Account** - Hosts installation scripts for automated deployment
+- **Azure Storage Account** - Hosts installation scripts for automated deployment with SAS token security
 - **SQL Server 2022 with 2 Instances** - CustomerDB and OrderDB instances with linked server configuration
 - **ASP.NET Core Application** - The legacy application running on the VM
 - **Custom Script Extension** - Automated installation and configuration without RDP
@@ -17,6 +17,7 @@ The init-vm setup creates:
                     ┌────────────────────────────┐
                     │  Azure Storage Account     │
                     │  (Blob Container: scripts) │
+                    │  - SAS Token Authentication │
                     │  - setup-all.ps1          │
                     │  - install-sql-server.ps1 │
                     │  - setup-databases.ps1    │
@@ -24,7 +25,7 @@ The init-vm setup creates:
                     │  - deploy-application.ps1 │
                     └────────┬───────────────────┘
                              │ Download Scripts
-                             │ (Public Read Access)
+                             │ (Secure SAS Token Access)
                              ▼
 ┌─────────────────────────────────────────────────────────┐
 │         Windows Server 2022 Azure VM (On-Prem Sim)     │
@@ -89,7 +90,7 @@ This script will:
 - Deploy a Windows Server 2022 VM
 - Configure network security rules (RDP, HTTP, SQL Server ports)
 - Create an Azure Storage Account for hosting installation scripts
-- Upload PowerShell scripts to Blob Storage with public read access
+- Upload PowerShell scripts to Blob Storage with secure SAS token access
 - Install Custom Script Extension to automatically run setup scripts
 
 **Parameters you'll be prompted for:**

@@ -119,8 +119,8 @@ az group delete --name rg-modernize-hackathon --yes --no-wait
 | VM Name | vm-onprem-simulator |
 | VM Size | Standard_D4s_v3 |
 | OS | Windows Server 2022 |
-| Storage Account | Auto-generated (st<rg-name><timestamp>) |
-| Storage Container | scripts (public read access) |
+| Storage Account | Auto-generated (st<rg-name><random>) |
+| Storage Container | scripts (private with SAS token access) |
 | SQL Instance 1 | localhost,1433 |
 | SQL Instance 2 | localhost,1434 |
 | SA Password | YourStrongPass123! |
