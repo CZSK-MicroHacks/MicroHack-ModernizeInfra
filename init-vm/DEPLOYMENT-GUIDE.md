@@ -37,6 +37,9 @@ Ensure you have permissions to create:
 - Network Security Groups
 - Public IP Addresses
 - VM Extensions
+- Storage Accounts
+
+**Important:** The deployment script uses Azure AD authentication for storage operations. Ensure your Azure CLI logged-in identity has the **Storage Blob Data Contributor** role assigned at the subscription or resource group level. This is required because the script no longer uses storage account keys (key-based authentication may be disabled for security).
 
 ## Deployment Steps
 
@@ -112,16 +115,16 @@ Ensure you have permissions to create:
 1. **Storage Account Creation**
    - The deployment script creates an Azure Storage Account
    - A blob container named "scripts" is created with private access (no public access)
-   - SAS token with read permissions is generated for secure access (valid for 24 hours)
+   - User delegation SAS token (Azure AD-based) with read permissions is generated for secure access (valid for 24 hours)
    
 2. **Script Upload**
-   - All PowerShell setup scripts are automatically uploaded to the blob container
+   - All PowerShell setup scripts are automatically uploaded to the blob container using Azure AD authentication
    - Scripts include: setup-all.ps1, install-sql-server.ps1, setup-databases.ps1, setup-linked-servers.ps1, deploy-application.ps1
-   - Scripts are accessed using secure SAS tokens passed in protected settings
+   - Scripts are accessed using secure user delegation SAS tokens passed in protected settings
 
 3. **Custom Script Extension**
    - Automatically installed on the VM after creation
-   - Downloads scripts from blob storage using SAS token authentication
+   - Downloads scripts from blob storage using user delegation SAS token (Azure AD-based) authentication
    - Executes setup-all.ps1 which orchestrates the entire setup
    - Uses `-ExecutionPolicy Bypass` for secure script execution
    - Runs without requiring any RDP connection
@@ -303,23 +306,27 @@ For fully automated deployment using Azure VM Custom Script Extension:
 
 2. **Create container and upload scripts**
    ```bash
-   # Create container
+   # Create container using Azure AD authentication
    az storage container create \
      --name scripts \
-     --account-name scriptstorage12345
+     --account-name scriptstorage12345 \
+     --auth-mode login
    
-   # Upload scripts
+   # Upload scripts using Azure AD authentication
    az storage blob upload-batch \
      --destination scripts \
      --source ./scripts \
-     --account-name scriptstorage12345
+     --account-name scriptstorage12345 \
+     --auth-mode login
    
-   # Generate SAS token
+   # Generate user delegation SAS token (Azure AD-based)
    az storage container generate-sas \
      --name scripts \
      --account-name scriptstorage12345 \
      --permissions r \
-     --expiry 2024-12-31
+     --expiry 2024-12-31 \
+     --auth-mode login \
+     --as-user
    ```
 
 3. **Deploy Custom Script Extension**
