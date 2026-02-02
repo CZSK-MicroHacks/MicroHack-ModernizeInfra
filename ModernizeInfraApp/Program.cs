@@ -22,6 +22,13 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+// ANTI-PATTERN: Serving static files without proper caching headers
+// ANTI-PATTERN: No content security policy
+app.UseStaticFiles();
+
+// ANTI-PATTERN: Using default files without explicit configuration
+app.UseDefaultFiles();
+
 // Initialize databases
 using (var scope = app.Services.CreateScope())
 {
@@ -33,5 +40,8 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.MapControllers();
+
+// ANTI-PATTERN: Fallback route for SPA without proper configuration
+app.MapFallbackToFile("index.html");
 
 app.Run();
