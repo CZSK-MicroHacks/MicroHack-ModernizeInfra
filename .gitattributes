@@ -1,0 +1,5 @@
+# PowerShell scripts must use CRLF line endings on Windows
+# Using -text to prevent line ending conversion so files are stored with CRLF in the repository.
+# This is necessary because Azure Custom Script Extension downloads raw files from the repository
+# without git checkout, so the files must have CRLF in the repository itself, not just in the working directory.
+*.ps1 -text
