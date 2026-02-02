@@ -250,7 +250,7 @@ STORAGE_ACCOUNT_NAME="st${RG_SANITIZED}"
 # Ensure name is at least 3 characters and at most 24 characters
 STORAGE_ACCOUNT_NAME="${STORAGE_ACCOUNT_NAME:0:24}"
 if [ ${#STORAGE_ACCOUNT_NAME} -lt 3 ]; then
-    STORAGE_ACCOUNT_NAME="stmodernizehack"
+    STORAGE_ACCOUNT_NAME="stmodernizedefault"
 fi
 CONTAINER_NAME="scripts"
 
@@ -259,16 +259,21 @@ if az storage account show --name "$STORAGE_ACCOUNT_NAME" --resource-group "$RES
     echo -e "${GREEN}✓ Storage account already exists, reusing: ${STORAGE_ACCOUNT_NAME}${NC}"
 else
     echo -e "${YELLOW}Creating new storage account...${NC}"
-    az storage account create \
+    if az storage account create \
         --name "$STORAGE_ACCOUNT_NAME" \
         --resource-group "$RESOURCE_GROUP" \
         --location "$LOCATION" \
         --sku Standard_LRS \
         --kind StorageV2 \
         --allow-blob-public-access false \
-        --output none
-    
-    echo -e "${GREEN}✓ Storage account created: ${STORAGE_ACCOUNT_NAME}${NC}"
+        --output none; then
+        echo -e "${GREEN}✓ Storage account created: ${STORAGE_ACCOUNT_NAME}${NC}"
+    else
+        echo -e "${RED}Error: Failed to create storage account${NC}"
+        echo "The storage account name '${STORAGE_ACCOUNT_NAME}' may already be taken globally."
+        echo "Please ensure the resource group name is unique or manually specify a different storage account."
+        exit 1
+    fi
 fi
 
 # Create container if it doesn't exist (private access only) using Azure AD authentication
