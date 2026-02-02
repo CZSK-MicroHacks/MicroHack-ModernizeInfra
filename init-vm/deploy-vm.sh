@@ -74,8 +74,16 @@ PUBLIC_IP_NAME="${VM_NAME}-pip"
 NIC_NAME="${VM_NAME}-nic"
 
 # Generate a valid Windows computer name (max 15 chars, no special chars)
-# Remove hyphens and truncate to 15 characters
-COMPUTER_NAME=$(echo "$VM_NAME" | sed 's/-//g' | cut -c1-15)
+# 1. Convert to lowercase for consistency
+# 2. Remove all non-alphanumeric characters
+# 3. Ensure it starts with a letter (prepend 'vm' if it starts with a number)
+# 4. Truncate to 15 characters
+COMPUTER_NAME=$(echo "$VM_NAME" | tr '[:upper:]' '[:lower:]' | tr -cd '[:alnum:]')
+# Check if it starts with a number and prepend 'vm' if so
+if [[ "$COMPUTER_NAME" =~ ^[0-9] ]]; then
+    COMPUTER_NAME="vm${COMPUTER_NAME}"
+fi
+COMPUTER_NAME=$(echo "$COMPUTER_NAME" | cut -c1-15)
 
 echo ""
 echo "=================================================="
