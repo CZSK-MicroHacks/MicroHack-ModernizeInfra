@@ -73,6 +73,27 @@ NSG_NAME="${VM_NAME}-nsg"
 PUBLIC_IP_NAME="${VM_NAME}-pip"
 NIC_NAME="${VM_NAME}-nic"
 
+# Generate a valid Windows computer name (max 15 chars, no special chars)
+# 1. Convert to lowercase for consistency
+# 2. Remove all non-alphanumeric characters
+# 3. Handle empty result (use default 'vmdefault')
+# 4. Ensure it starts with a letter (prepend 'vm' if it starts with a number)
+# 5. Truncate to 15 characters
+COMPUTER_NAME=$(echo "$VM_NAME" | tr '[:upper:]' '[:lower:]' | tr -cd '[:alnum:]')
+
+# If empty after sanitization, use default
+if [[ -z "$COMPUTER_NAME" ]]; then
+    COMPUTER_NAME="vmdefault"
+fi
+
+# Check if it starts with a number and prepend 'vm' if so (truncate first to prevent exceeding 15 chars)
+if [[ "$COMPUTER_NAME" =~ ^[0-9] ]]; then
+    COMPUTER_NAME="vm$(echo "$COMPUTER_NAME" | cut -c1-13)"
+fi
+
+# Final truncation to ensure 15 char limit
+COMPUTER_NAME=$(echo "$COMPUTER_NAME" | cut -c1-15)
+
 echo ""
 echo "=================================================="
 echo "Deployment Configuration:"
@@ -80,6 +101,7 @@ echo "=================================================="
 echo "Resource Group: ${RESOURCE_GROUP}"
 echo "Location: ${LOCATION}"
 echo "VM Name: ${VM_NAME}"
+echo "Computer Name: ${COMPUTER_NAME}"
 echo "VM Size: ${DEFAULT_VM_SIZE}"
 echo "Admin Username: ${ADMIN_USERNAME}"
 echo "=================================================="
@@ -201,6 +223,7 @@ echo -e "${YELLOW}Creating Windows Server VM (this may take a few minutes)...${N
 az vm create \
     --resource-group "$RESOURCE_GROUP" \
     --name "$VM_NAME" \
+    --computer-name "$COMPUTER_NAME" \
     --location "$LOCATION" \
     --nics "$NIC_NAME" \
     --image "MicrosoftWindowsServer:WindowsServer:2022-datacenter-azure-edition:latest" \
