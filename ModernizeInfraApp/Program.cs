@@ -22,12 +22,12 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+// ANTI-PATTERN: Using default files without explicit configuration
+app.UseDefaultFiles();
+
 // ANTI-PATTERN: Serving static files without proper caching headers
 // ANTI-PATTERN: No content security policy
 app.UseStaticFiles();
-
-// ANTI-PATTERN: Using default files without explicit configuration
-app.UseDefaultFiles();
 
 // Initialize databases
 using (var scope = app.Services.CreateScope())
