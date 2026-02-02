@@ -14,7 +14,7 @@ NC='\033[0m' # No Color
 
 # Default values
 DEFAULT_RESOURCE_GROUP="rg-modernize-hackathon"
-DEFAULT_LOCATION="eastus"
+DEFAULT_LOCATION="swedencentral"
 DEFAULT_VM_NAME="vm-onprem-simulator"
 DEFAULT_VM_SIZE="Standard_D4s_v3"
 
