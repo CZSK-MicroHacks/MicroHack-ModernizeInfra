@@ -5,12 +5,22 @@ namespace ModernizeInfraApp.Data;
 
 public class OrderDbContext : DbContext
 {
+    private const string ConnectionString = "Server=sqlserver2,1433;Database=OrderDB;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;";
+
     public OrderDbContext(DbContextOptions<OrderDbContext> options)
         : base(options)
     {
     }
 
     public DbSet<Order> Orders { get; set; }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        if (!optionsBuilder.IsConfigured)
+        {
+            optionsBuilder.UseSqlServer(ConnectionString);
+        }
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
