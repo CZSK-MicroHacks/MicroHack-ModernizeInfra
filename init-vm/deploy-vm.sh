@@ -241,6 +241,80 @@ PUBLIC_IP=$(az network public-ip show \
     --name "$PUBLIC_IP_NAME" \
     --query ipAddress -o tsv)
 
+# Create storage account for scripts
+echo -e "${YELLOW}Creating storage account for installation scripts...${NC}"
+STORAGE_ACCOUNT_NAME="st$(echo "$RESOURCE_GROUP" | tr -cd '[:alnum:]' | tr '[:upper:]' '[:lower:]' | cut -c1-20)$(date +%s | cut -c6-10)"
+CONTAINER_NAME="scripts"
+
+az storage account create \
+    --name "$STORAGE_ACCOUNT_NAME" \
+    --resource-group "$RESOURCE_GROUP" \
+    --location "$LOCATION" \
+    --sku Standard_LRS \
+    --kind StorageV2 \
+    --allow-blob-public-access true \
+    --output none
+
+echo -e "${GREEN}✓ Storage account created: ${STORAGE_ACCOUNT_NAME}${NC}"
+
+# Get storage account key
+STORAGE_KEY=$(az storage account keys list \
+    --resource-group "$RESOURCE_GROUP" \
+    --account-name "$STORAGE_ACCOUNT_NAME" \
+    --query "[0].value" -o tsv)
+
+# Create container
+echo -e "${YELLOW}Creating blob container...${NC}"
+az storage container create \
+    --name "$CONTAINER_NAME" \
+    --account-name "$STORAGE_ACCOUNT_NAME" \
+    --account-key "$STORAGE_KEY" \
+    --public-access blob \
+    --output none
+
+echo -e "${GREEN}✓ Container created${NC}"
+
+# Upload scripts to blob storage
+echo -e "${YELLOW}Uploading installation scripts to blob storage...${NC}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/scripts"
+
+for script_file in "$SCRIPT_DIR"/*.ps1; do
+    if [ -f "$script_file" ]; then
+        filename=$(basename "$script_file")
+        echo "  Uploading $filename..."
+        az storage blob upload \
+            --account-name "$STORAGE_ACCOUNT_NAME" \
+            --account-key "$STORAGE_KEY" \
+            --container-name "$CONTAINER_NAME" \
+            --name "$filename" \
+            --file "$script_file" \
+            --output none
+    fi
+done
+
+echo -e "${GREEN}✓ Scripts uploaded successfully${NC}"
+
+# Get blob URLs
+SETUP_ALL_URL="https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/${CONTAINER_NAME}/setup-all.ps1"
+INSTALL_SQL_URL="https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/${CONTAINER_NAME}/install-sql-server.ps1"
+SETUP_DATABASES_URL="https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/${CONTAINER_NAME}/setup-databases.ps1"
+SETUP_LINKED_URL="https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/${CONTAINER_NAME}/setup-linked-servers.ps1"
+DEPLOY_APP_URL="https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/${CONTAINER_NAME}/deploy-application.ps1"
+
+# Install Custom Script Extension
+echo -e "${YELLOW}Installing Custom Script Extension...${NC}"
+az vm extension set \
+    --resource-group "$RESOURCE_GROUP" \
+    --vm-name "$VM_NAME" \
+    --name CustomScriptExtension \
+    --publisher Microsoft.Compute \
+    --version 1.10 \
+    --settings "{\"fileUris\":[\"$SETUP_ALL_URL\",\"$INSTALL_SQL_URL\",\"$SETUP_DATABASES_URL\",\"$SETUP_LINKED_URL\",\"$DEPLOY_APP_URL\"]}" \
+    --protected-settings "{\"commandToExecute\":\"powershell -ExecutionPolicy Unrestricted -File setup-all.ps1\"}" \
+    --output none
+
+echo -e "${GREEN}✓ Custom Script Extension installed${NC}"
+
 echo ""
 echo "=================================================="
 echo "  VM Deployment Successful!"
@@ -249,26 +323,28 @@ echo "VM Name: ${VM_NAME}"
 echo "Public IP: ${PUBLIC_IP}"
 echo "RDP Access: ${PUBLIC_IP}:3389"
 echo "Username: ${ADMIN_USERNAME}"
+echo "Storage Account: ${STORAGE_ACCOUNT_NAME}"
 echo ""
 echo "=================================================="
-echo "  Next Steps:"
+echo "  Automated Setup in Progress"
 echo "=================================================="
-echo "1. Connect via RDP to: ${PUBLIC_IP}"
-echo "2. Run the setup scripts in order:"
-echo "   - scripts/install-sql-server.ps1"
-echo "   - scripts/setup-databases.ps1"
-echo "   - scripts/setup-linked-servers.ps1"
-echo "   - scripts/deploy-application.ps1"
+echo "The Custom Script Extension is now running and will:"
+echo "  1. Install SQL Server 2022 with two instances"
+echo "  2. Create and populate databases"
+echo "  3. Configure linked servers"
+echo "  4. Deploy the ASP.NET Core application"
 echo ""
-echo "3. Or use Custom Script Extension to automate:"
+echo "This process takes approximately 20-30 minutes."
 echo ""
-echo "   az vm extension set \\"
-echo "     --resource-group $RESOURCE_GROUP \\"
-echo "     --vm-name $VM_NAME \\"
-echo "     --name CustomScriptExtension \\"
-echo "     --publisher Microsoft.Compute \\"
-echo "     --settings '{\"fileUris\":[\"https://your-storage/scripts.zip\"],\"commandToExecute\":\"powershell -ExecutionPolicy Unrestricted -File setup-all.ps1\"}'"
+echo "Monitor extension status:"
+echo "  az vm extension list \\"
+echo "    --resource-group $RESOURCE_GROUP \\"
+echo "    --vm-name $VM_NAME \\"
+echo "    --query \"[].{Name:name, State:provisioningState}\""
+echo ""
+echo "Once complete, access the application at:"
+echo "  http://${PUBLIC_IP}:8080"
 echo ""
 echo "=================================================="
 echo ""
-echo -e "${GREEN}Deployment complete!${NC}"
+echo -e "${GREEN}Deployment complete! Setup is running automatically.${NC}"

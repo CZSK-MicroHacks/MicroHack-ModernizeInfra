@@ -6,15 +6,29 @@ This directory contains Azure CLI scripts and PowerShell configurations to deplo
 
 The init-vm setup creates:
 - **Windows Server 2022 Azure VM** - Simulates on-premises infrastructure
+- **Azure Storage Account** - Hosts installation scripts for automated deployment
 - **SQL Server 2022 with 2 Instances** - CustomerDB and OrderDB instances with linked server configuration
 - **ASP.NET Core Application** - The legacy application running on the VM
-- **Custom VM Extensions** - Automated installation and configuration scripts
+- **Custom Script Extension** - Automated installation and configuration without RDP
 
 ## Architecture
 
 ```
+                    ┌────────────────────────────┐
+                    │  Azure Storage Account     │
+                    │  (Blob Container: scripts) │
+                    │  - setup-all.ps1          │
+                    │  - install-sql-server.ps1 │
+                    │  - setup-databases.ps1    │
+                    │  - setup-linked-servers.ps1│
+                    │  - deploy-application.ps1 │
+                    └────────┬───────────────────┘
+                             │ Download Scripts
+                             │ (Public Read Access)
+                             ▼
 ┌─────────────────────────────────────────────────────────┐
 │         Windows Server 2022 Azure VM (On-Prem Sim)     │
+│         Custom Script Extension runs automatically       │
 │                                                         │
 │  ┌─────────────────────────────────────────────────┐  │
 │  │         ASP.NET Core Application                │  │
@@ -74,7 +88,9 @@ This script will:
 - Create a resource group (if it doesn't exist)
 - Deploy a Windows Server 2022 VM
 - Configure network security rules (RDP, HTTP, SQL Server ports)
-- Install custom VM extensions
+- Create an Azure Storage Account for hosting installation scripts
+- Upload PowerShell scripts to Blob Storage with public read access
+- Install Custom Script Extension to automatically run setup scripts
 
 **Parameters you'll be prompted for:**
 - Resource Group Name (default: rg-modernize-hackathon)
@@ -83,17 +99,21 @@ This script will:
 - Admin Username
 - Admin Password (must meet complexity requirements)
 
-### Step 2: Wait for VM Extensions to Complete
+### Step 2: Automated Setup Process
+
+**No RDP connection required!** The VM automatically configures itself using the Custom Script Extension.
 
 The VM will automatically:
-1. Install SQL Server 2022 Developer Edition
-2. Configure two SQL Server instances (ports 1433 and 1434)
-3. Create CustomerDB and OrderDB databases
-4. Set up linked server configuration
-5. Download and deploy the ASP.NET Core application
-6. Start the application
+1. Download installation scripts from Azure Blob Storage
+2. Install SQL Server 2022 Developer Edition
+3. Configure two SQL Server instances (ports 1433 and 1434)
+4. Create CustomerDB and OrderDB databases with sample data
+5. Set up linked server configuration
+6. Install .NET 10 SDK and Runtime
+7. Download and deploy the ASP.NET Core application
+8. Start the application on port 8080
 
-**This process takes approximately 20-30 minutes.**
+**This process takes approximately 20-30 minutes and requires no manual intervention.**
 
 Monitor the deployment:
 ```bash
@@ -123,10 +143,12 @@ Main deployment script using Azure CLI to:
 - Create resource group
 - Deploy Windows Server 2022 VM
 - Configure networking and security
-- Install custom VM extensions
+- Create Azure Storage Account for hosting scripts
+- Upload PowerShell scripts to Blob Storage with public read access
+- Install Custom Script Extension to automatically execute setup scripts
 
 ### 2. `scripts/install-sql-server.ps1`
-PowerShell script (executed via VM extension) to:
+PowerShell script (downloaded and executed automatically via VM extension) to:
 - Download SQL Server 2022 Developer Edition
 - Install default instance (port 1433)
 - Install named instance MSSQL2 (port 1434)
