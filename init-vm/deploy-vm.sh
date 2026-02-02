@@ -241,41 +241,52 @@ PUBLIC_IP=$(az network public-ip show \
     --name "$PUBLIC_IP_NAME" \
     --query ipAddress -o tsv)
 
-# Create storage account for scripts
-echo -e "${YELLOW}Creating storage account for installation scripts...${NC}"
+# Create or reuse storage account for scripts
+echo -e "${YELLOW}Setting up storage account for installation scripts...${NC}"
 # Generate a valid storage account name (3-24 chars, lowercase letters and numbers only)
-# Format: st + sanitized resource group name + random suffix
+# Format: st + sanitized resource group name (deterministic, no random suffix)
 RG_SANITIZED=$(echo "$RESOURCE_GROUP" | tr -cd '[:alnum:]' | tr '[:upper:]' '[:lower:]')
-RANDOM_SUFFIX=$(date +%s%N | md5sum | head -c 6)
-STORAGE_ACCOUNT_NAME="st${RG_SANITIZED:0:12}${RANDOM_SUFFIX}"
+STORAGE_ACCOUNT_NAME="st${RG_SANITIZED}"
 # Ensure name is at least 3 characters and at most 24 characters
 STORAGE_ACCOUNT_NAME="${STORAGE_ACCOUNT_NAME:0:24}"
 if [ ${#STORAGE_ACCOUNT_NAME} -lt 3 ]; then
-    STORAGE_ACCOUNT_NAME="stmodernize${RANDOM_SUFFIX}"
+    STORAGE_ACCOUNT_NAME="stmodernizehack"
 fi
 CONTAINER_NAME="scripts"
 
-az storage account create \
-    --name "$STORAGE_ACCOUNT_NAME" \
-    --resource-group "$RESOURCE_GROUP" \
-    --location "$LOCATION" \
-    --sku Standard_LRS \
-    --kind StorageV2 \
-    --allow-blob-public-access false \
-    --output none
+# Check if storage account already exists in the resource group
+if az storage account show --name "$STORAGE_ACCOUNT_NAME" --resource-group "$RESOURCE_GROUP" &> /dev/null; then
+    echo -e "${GREEN}✓ Storage account already exists, reusing: ${STORAGE_ACCOUNT_NAME}${NC}"
+else
+    echo -e "${YELLOW}Creating new storage account...${NC}"
+    az storage account create \
+        --name "$STORAGE_ACCOUNT_NAME" \
+        --resource-group "$RESOURCE_GROUP" \
+        --location "$LOCATION" \
+        --sku Standard_LRS \
+        --kind StorageV2 \
+        --allow-blob-public-access false \
+        --output none
+    
+    echo -e "${GREEN}✓ Storage account created: ${STORAGE_ACCOUNT_NAME}${NC}"
+fi
 
-echo -e "${GREEN}✓ Storage account created: ${STORAGE_ACCOUNT_NAME}${NC}"
-
-# Create container (private access only) using Azure AD authentication
-echo -e "${YELLOW}Creating blob container...${NC}"
-az storage container create \
+# Create container if it doesn't exist (private access only) using Azure AD authentication
+echo -e "${YELLOW}Ensuring blob container exists...${NC}"
+if ! az storage container show \
     --name "$CONTAINER_NAME" \
     --account-name "$STORAGE_ACCOUNT_NAME" \
-    --auth-mode login \
-    --public-access off \
-    --output none
-
-echo -e "${GREEN}✓ Container created${NC}"
+    --auth-mode login &> /dev/null; then
+    az storage container create \
+        --name "$CONTAINER_NAME" \
+        --account-name "$STORAGE_ACCOUNT_NAME" \
+        --auth-mode login \
+        --public-access off \
+        --output none
+    echo -e "${GREEN}✓ Container created${NC}"
+else
+    echo -e "${GREEN}✓ Container already exists${NC}"
+fi
 
 # Upload scripts to blob storage
 echo -e "${YELLOW}Uploading installation scripts to blob storage...${NC}"
