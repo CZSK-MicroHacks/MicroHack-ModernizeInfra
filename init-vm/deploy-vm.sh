@@ -345,7 +345,7 @@ az vm extension set \
     --name CustomScriptExtension \
     --publisher Microsoft.Compute \
     --version 1.10 \
-    --protected-settings "{\"fileUris\":[\"$SETUP_ALL_URL\",\"$INSTALL_SQL_URL\",\"$SETUP_DATABASES_URL\",\"$SETUP_LINKED_URL\",\"$DEPLOY_APP_URL\"],\"commandToExecute\":\"powershell -ExecutionPolicy Bypass -Command \\\"\\\$env:AUTOMATION_MODE='true'; & .\\\\setup-all.ps1\\\"\"}" \
+    --protected-settings "{\"fileUris\":[\"$SETUP_ALL_URL\",\"$INSTALL_SQL_URL\",\"$SETUP_DATABASES_URL\",\"$SETUP_LINKED_URL\",\"$DEPLOY_APP_URL\"],\"commandToExecute\":\"powershell -ExecutionPolicy Bypass -Command \\\"\$env:AUTOMATION_MODE='true'; & .\\\\setup-all.ps1\\\"\"}" \
     --output none
 
 echo -e "${GREEN}✓ Custom Script Extension installed${NC}"
