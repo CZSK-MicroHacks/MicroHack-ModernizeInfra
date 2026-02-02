@@ -15,7 +15,7 @@ Write-Host ""
 # Configuration
 $SqlPassword = "YourStrongPass123!"
 $AppFolder = "C:\Apps\ModernizeInfraApp"
-$DotNetVersion = "9.0" # Using .NET 9 as .NET 10 is not yet released (this is future-proof script)
+$DotNetVersion = "9.0" # Using .NET 9 SDK for compatibility
 $AppPort = 8080
 
 # Create application folder
