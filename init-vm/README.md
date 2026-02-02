@@ -145,7 +145,7 @@ Main deployment script using Azure CLI to:
 - Deploy Windows Server 2022 VM
 - Configure networking and security
 - Create Azure Storage Account for hosting scripts
-- Upload PowerShell scripts to Blob Storage with public read access
+- Upload PowerShell scripts to Blob Storage with private access and SAS token authentication
 - Install Custom Script Extension to automatically execute setup scripts
 
 ### 2. `scripts/install-sql-server.ps1`
