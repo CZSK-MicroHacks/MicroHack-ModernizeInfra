@@ -20,10 +20,17 @@ Write-Host ""
 Write-Host "This process will take approximately 20-30 minutes" -ForegroundColor Yellow
 Write-Host ""
 
-$confirmation = Read-Host "Do you want to continue? (Y/N)"
-if ($confirmation -ne 'Y' -and $confirmation -ne 'y') {
-    Write-Host "Setup cancelled" -ForegroundColor Red
-    exit
+# Check if running in non-interactive mode (e.g., via Custom Script Extension)
+$isNonInteractive = [Environment]::UserInteractive -eq $false -or $env:AUTOMATION_MODE -eq 'true'
+
+if (-not $isNonInteractive) {
+    $confirmation = Read-Host "Do you want to continue? (Y/N)"
+    if ($confirmation -ne 'Y' -and $confirmation -ne 'y') {
+        Write-Host "Setup cancelled" -ForegroundColor Red
+        exit
+    }
+} else {
+    Write-Host "Running in automated mode - proceeding without confirmation" -ForegroundColor Green
 }
 
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Path

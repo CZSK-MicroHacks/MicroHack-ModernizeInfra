@@ -7,6 +7,9 @@
 
 $ErrorActionPreference = "Stop"
 
+# Check if running in non-interactive mode (e.g., via Custom Script Extension)
+$isNonInteractive = [Environment]::UserInteractive -eq $false -or $env:AUTOMATION_MODE -eq 'true'
+
 Write-Host "=================================================="
 Write-Host "  ASP.NET Core Application Deployment Script"
 Write-Host "=================================================="
@@ -200,11 +203,18 @@ try {
 }
 
 if ($gitInstalled) {
-    Write-Host ""
-    Write-Host "Would you like to clone and build the application now? (Y/N)" -ForegroundColor Cyan
-    $response = Read-Host
+    if (-not $isNonInteractive) {
+        Write-Host ""
+        Write-Host "Would you like to clone and build the application now? (Y/N)" -ForegroundColor Cyan
+        $response = Read-Host
+        $shouldClone = $response -eq 'Y' -or $response -eq 'y'
+    } else {
+        # In automated mode, always clone and build
+        Write-Host "Running in automated mode - cloning and building application" -ForegroundColor Green
+        $shouldClone = $true
+    }
     
-    if ($response -eq 'Y' -or $response -eq 'y') {
+    if ($shouldClone) {
         Write-Host "Cloning repository..." -ForegroundColor Yellow
         $repoPath = "C:\Apps\MicroHack-ModernizeInfra"
         

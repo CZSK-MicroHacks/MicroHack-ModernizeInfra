@@ -310,7 +310,7 @@ az vm extension set \
     --publisher Microsoft.Compute \
     --version 1.10 \
     --settings "{\"fileUris\":[\"$SETUP_ALL_URL\",\"$INSTALL_SQL_URL\",\"$SETUP_DATABASES_URL\",\"$SETUP_LINKED_URL\",\"$DEPLOY_APP_URL\"]}" \
-    --protected-settings "{\"commandToExecute\":\"powershell -ExecutionPolicy Unrestricted -File setup-all.ps1\"}" \
+    --protected-settings "{\"commandToExecute\":\"powershell -ExecutionPolicy Unrestricted -Command \\\"\\\$env:AUTOMATION_MODE='true'; & .\\\\setup-all.ps1\\\"\"}" \
     --output none
 
 echo -e "${GREEN}✓ Custom Script Extension installed${NC}"
