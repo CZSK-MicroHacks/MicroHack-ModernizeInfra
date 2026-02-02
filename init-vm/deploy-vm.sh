@@ -270,8 +270,8 @@ else
         echo -e "${GREEN}✓ Storage account created: ${STORAGE_ACCOUNT_NAME}${NC}"
     else
         echo -e "${RED}Error: Failed to create storage account${NC}"
-        echo "The storage account name '${STORAGE_ACCOUNT_NAME}' may already be taken globally."
-        echo "Please ensure the resource group name is unique or manually specify a different storage account."
+        echo "The storage account name '${STORAGE_ACCOUNT_NAME}' may be taken globally across Azure."
+        echo "Consider using a more unique resource group name to generate a different storage account name."
         exit 1
     fi
 fi
