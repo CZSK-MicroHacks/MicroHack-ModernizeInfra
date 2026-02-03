@@ -400,6 +400,8 @@ Approximate Azure costs (Sweden Central region):
 
 **Note:** The Developer SKU is free and perfect for dev/test scenarios. It supports one concurrent connection and does not require a public IP address or dedicated subnet, reducing both cost and complexity.
 
+⚠️ **Important:** The Developer SKU is intended for non-production use only. For production workloads, use Standard or Premium SKU which provide reliability guarantees, support SLAs, and additional features like tunneling and multiple concurrent connections.
+
 **Cost-saving tips for hackathon:**
 - Deallocate VM when not in use: `az vm deallocate`
 - Use spot instances for even lower costs

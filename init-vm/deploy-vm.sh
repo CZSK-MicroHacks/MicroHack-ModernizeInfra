@@ -70,9 +70,9 @@ echo -e "${GREEN}Generated strong random password for local admin user${NC}"
 # Derived names
 VNET_NAME="${VM_NAME}-vnet"
 SUBNET_NAME="${VM_NAME}-subnet"
-BASTION_SUBNET_NAME="AzureBastionSubnet"
+# BASTION_SUBNET_NAME="AzureBastionSubnet"  # Not needed for Developer SKU
 BASTION_NAME="${VM_NAME}-bastion"
-BASTION_IP_NAME="${VM_NAME}-bastion-pip"
+# BASTION_IP_NAME="${VM_NAME}-bastion-pip"  # Not needed for Developer SKU
 NSG_NAME="${VM_NAME}-nsg"
 NIC_NAME="${VM_NAME}-nic"
 STORAGE_PE_NAME="${VM_NAME}-storage-pe"
