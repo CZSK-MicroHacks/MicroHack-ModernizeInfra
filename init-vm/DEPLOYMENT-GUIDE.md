@@ -74,6 +74,11 @@ Ensure you have permissions to create:
    ```bash
    ./deploy-vm.sh
    ```
+   
+   **Optional:** To test with scripts from a different branch (e.g., for development):
+   ```bash
+   GITHUB_BRANCH=feature-branch ./deploy-vm.sh
+   ```
 
 4. **Provide the requested information when prompted:**
    - Resource Group Name: (default: rg-modernize-hackathon)

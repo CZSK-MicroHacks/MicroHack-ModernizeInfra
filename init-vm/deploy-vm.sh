@@ -236,8 +236,10 @@ az vm extension set \
 echo -e "${GREEN}✓ Azure AD Login extension installed${NC}"
 
 # Construct GitHub raw URLs for scripts
-# Use main branch as the default, scripts will be fetched from GitHub
-GITHUB_BASE_URL="https://raw.githubusercontent.com/CZSK-MicroHacks/MicroHack-ModernizeInfra/main/init-vm/scripts"
+# Use main branch as the default, or override with GITHUB_BRANCH environment variable
+# This allows testing changes in feature branches before merging to main
+GITHUB_BRANCH="${GITHUB_BRANCH:-main}"
+GITHUB_BASE_URL="https://raw.githubusercontent.com/CZSK-MicroHacks/MicroHack-ModernizeInfra/${GITHUB_BRANCH}/init-vm/scripts"
 SETUP_ALL_URL="${GITHUB_BASE_URL}/setup-all.ps1"
 INSTALL_SQL_URL="${GITHUB_BASE_URL}/install-sql-server.ps1"
 SETUP_DATABASES_URL="${GITHUB_BASE_URL}/setup-databases.ps1"

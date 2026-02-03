@@ -354,6 +354,7 @@ az group delete --name rg-modernize-hackathon --yes --no-wait
 2. **SQL Server Developer Edition** - Licensed for dev/test only
 3. **No SSL/TLS** - Application uses HTTP (not HTTPS)
 4. **SQL Server uses default passwords** - Change for any non-hackathon use
+5. **Scripts from public repository** - For production, consider using private repositories, signed releases, or script integrity validation (e.g., SHA256 checksums) to mitigate supply chain risks
 
 **Additional recommendations for production:**
 - Use Azure Key Vault for all secrets
