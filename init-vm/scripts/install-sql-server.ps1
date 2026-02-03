@@ -1,4 +1,4 @@
-#
+﻿#
 # Install SQL Server 2022 Developer Edition with Two Instances
 # This script installs SQL Server with a default instance (port 1433) and a named instance (port 1434)
 #
