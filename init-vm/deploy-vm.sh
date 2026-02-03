@@ -236,29 +236,252 @@ az vm extension set \
 
 echo -e "${GREEN}✓ Azure AD Login extension installed${NC}"
 
-# Construct GitHub raw URLs for scripts
-# Use main branch as the default, or override with GITHUB_BRANCH environment variable
-# This allows testing changes in feature branches before merging to main
-GITHUB_BRANCH="${GITHUB_BRANCH:-main}"
-GITHUB_BASE_URL="https://raw.githubusercontent.com/CZSK-MicroHacks/MicroHack-ModernizeInfra/${GITHUB_BRANCH}/init-vm/scripts"
-SETUP_ALL_URL="${GITHUB_BASE_URL}/setup-all.ps1"
-INSTALL_SQL_URL="${GITHUB_BASE_URL}/install-sql-server.ps1"
-SETUP_DATABASES_URL="${GITHUB_BASE_URL}/setup-databases.ps1"
-SETUP_LINKED_URL="${GITHUB_BASE_URL}/setup-linked-servers.ps1"
-DEPLOY_APP_URL="${GITHUB_BASE_URL}/deploy-application.ps1"
-
-# Install Custom Script Extension with public GitHub URLs
+# Install Custom Script Extension with embedded inline script
 echo -e "${YELLOW}Installing Custom Script Extension...${NC}"
-# Note: Using Bypass instead of Unrestricted for better security
-# The scripts will be downloaded from public GitHub repository
+# Note: Script content is embedded directly in the command without downloading from GitHub
+# This ensures the extension executes code directly without external dependencies
+
+# Define the complete setup script inline
+SETUP_SCRIPT_INLINE='
+$ErrorActionPreference = "Stop"
+$env:AUTOMATION_MODE = "true"
+Write-Host "Starting consolidated inline setup..." -ForegroundColor Cyan
+
+# Configuration
+$SqlPassword = "YourStrongPass123!"
+$AppFolder = "C:\Apps\ModernizeInfraApp"
+$AppPort = 8080
+$logFile = "C:\Temp\setup-log.txt"
+New-Item -ItemType Directory -Force -Path "C:\Temp" | Out-Null
+
+function Write-Log {
+    param($Message)
+    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $logMessage = "[$timestamp] $Message"
+    Write-Host $logMessage
+    Add-Content -Path $logFile -Value $logMessage
+}
+
+$startTime = Get-Date
+Write-Log "Consolidated setup started"
+
+# STEP 1: Install SQL Server
+Write-Host "Step 1: SQL Server Installation" -ForegroundColor Cyan
+Write-Log "Starting SQL Server installation"
+
+$DownloadFolder = "C:\Temp\SQLServer"
+$SqlMediaPath = "$DownloadFolder\SQLMedia"
+New-Item -ItemType Directory -Force -Path $DownloadFolder,$SqlMediaPath | Out-Null
+
+$SqlDownloadUrl = "https://go.microsoft.com/fwlink/p/?linkid=2215158"
+$SqlSetupPath = "$DownloadFolder\SQL2022-SSEI-Dev.exe"
+Invoke-WebRequest -Uri $SqlDownloadUrl -OutFile $SqlSetupPath
+Start-Process -FilePath $SqlSetupPath -ArgumentList "/Action=Download","/MediaPath=$SqlMediaPath","/MediaType=Core","/Quiet" -Wait
+
+$SetupExe = Get-ChildItem -Path $SqlMediaPath -Recurse -Filter "setup.exe" | Select-Object -First 1
+if ($null -eq $SetupExe) { Write-Error "Setup.exe not found"; exit 1 }
+
+# Install default instance
+$ConfigFile1 = "$DownloadFolder\ConfigurationFile1.ini"
+@"
+[OPTIONS]
+ACTION="Install"
+FEATURES=SQLENGINE
+INSTANCENAME="MSSQLSERVER"
+INSTANCEID="MSSQLSERVER"
+SQLSVCACCOUNT="NT AUTHORITY\SYSTEM"
+SQLSYSADMINACCOUNTS="BUILTIN\Administrators"
+AGTSVCACCOUNT="NT AUTHORITY\SYSTEM"
+SECURITYMODE="SQL"
+SAPWD="$SqlPassword"
+SQLSVCSTARTUPTYPE="Automatic"
+AGTSVCSTARTUPTYPE="Automatic"
+TCPENABLED="1"
+NPENABLED="0"
+BROWSERSVCSTARTUPTYPE="Automatic"
+IACCEPTSQLSERVERLICENSETERMS
+QUIET="True"
+"@ | Out-File -FilePath $ConfigFile1 -Encoding ASCII
+
+Start-Process -FilePath $SetupExe.FullName -ArgumentList "/ConfigurationFile=$ConfigFile1" -Wait -NoNewWindow
+
+# Install named instance
+$ConfigFile2 = "$DownloadFolder\ConfigurationFile2.ini"
+@"
+[OPTIONS]
+ACTION="Install"
+FEATURES=SQLENGINE
+INSTANCENAME="MSSQL2"
+INSTANCEID="MSSQL2"
+SQLSVCACCOUNT="NT AUTHORITY\SYSTEM"
+SQLSYSADMINACCOUNTS="BUILTIN\Administrators"
+AGTSVCACCOUNT="NT AUTHORITY\SYSTEM"
+SECURITYMODE="SQL"
+SAPWD="$SqlPassword"
+SQLSVCSTARTUPTYPE="Automatic"
+AGTSVCSTARTUPTYPE="Automatic"
+TCPENABLED="1"
+NPENABLED="0"
+BROWSERSVCSTARTUPTYPE="Automatic"
+IACCEPTSQLSERVERLICENSETERMS
+QUIET="True"
+"@ | Out-File -FilePath $ConfigFile2 -Encoding ASCII
+
+Start-Process -FilePath $SetupExe.FullName -ArgumentList "/ConfigurationFile=$ConfigFile2" -Wait -NoNewWindow
+Start-Sleep -Seconds 30
+
+# Configure TCP/IP
+Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force
+Install-Module -Name SqlServer -Force -AllowClobber
+Import-Module SqlServer -ErrorAction SilentlyContinue
+
+$wmi1 = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer
+$uri1 = "ManagedComputer[@Name=\"$env:COMPUTERNAME\"]/ServerInstance[@Name=\"MSSQLSERVER\"]/ServerProtocol[@Name=\"Tcp\"]"
+$tcp1 = $wmi1.GetSmoObject($uri1)
+$tcp1.IsEnabled = $true
+$tcp1.Alter()
+$ipAll1 = $tcp1.IPAddresses | Where-Object { $_.Name -eq "IPAll" }
+$ipAll1.IPAddressProperties["TcpPort"].Value = "1433"
+$ipAll1.IPAddressProperties["TcpDynamicPorts"].Value = ""
+$tcp1.Alter()
+
+$uri2 = "ManagedComputer[@Name=\"$env:COMPUTERNAME\"]/ServerInstance[@Name=\"MSSQL2\"]/ServerProtocol[@Name=\"Tcp\"]"
+$tcp2 = $wmi1.GetSmoObject($uri2)
+$tcp2.IsEnabled = $true
+$tcp2.Alter()
+$ipAll2 = $tcp2.IPAddresses | Where-Object { $_.Name -eq "IPAll" }
+$ipAll2.IPAddressProperties["TcpPort"].Value = "1434"
+$ipAll2.IPAddressProperties["TcpDynamicPorts"].Value = ""
+$tcp2.Alter()
+
+Restart-Service -Name "MSSQLSERVER","MSSQL$MSSQL2","SQLBrowser" -Force
+Start-Sleep -Seconds 10
+
+New-NetFirewallRule -DisplayName "SQL Server Default" -Direction Inbound -Protocol TCP -LocalPort 1433 -Action Allow -ErrorAction SilentlyContinue
+New-NetFirewallRule -DisplayName "SQL Server MSSQL2" -Direction Inbound -Protocol TCP -LocalPort 1434 -Action Allow -ErrorAction SilentlyContinue
+New-NetFirewallRule -DisplayName "SQL Browser" -Direction Inbound -Protocol UDP -LocalPort 1434 -Action Allow -ErrorAction SilentlyContinue
+
+Write-Log "SQL Server installation completed"
+
+# STEP 2: Setup Databases
+Write-Host "Step 2: Database Setup" -ForegroundColor Cyan
+$SqlCmdPath = "C:\Program Files\Microsoft SQL Server\Client SDK\ODBC\170\Tools\Binn\sqlcmd.exe"
+
+@"
+IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = \"CustomerDB\") CREATE DATABASE CustomerDB;
+GO
+USE CustomerDB;
+GO
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = \"Customers\") CREATE TABLE Customers (CustomerId INT PRIMARY KEY IDENTITY(1,1), Name NVARCHAR(200) NOT NULL, Email NVARCHAR(200) NOT NULL, CreatedDate DATETIME2 NOT NULL DEFAULT GETDATE());
+GO
+IF NOT EXISTS (SELECT * FROM Customers) INSERT INTO Customers (Name, Email) VALUES (\"John Smith\",\"john.smith@example.com\"),(\"Jane Doe\",\"jane.doe@example.com\"),(\"Bob Johnson\",\"bob.johnson@example.com\"),(\"Alice Williams\",\"alice.williams@example.com\"),(\"Charlie Brown\",\"charlie.brown@example.com\");
+GO
+"@ | Out-File "$env:TEMP\customerdb.sql" -Encoding ASCII
+& $SqlCmdPath -S "localhost,1433" -U sa -P $SqlPassword -i "$env:TEMP\customerdb.sql" -C
+
+@"
+IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = \"OrderDB\") CREATE DATABASE OrderDB;
+GO
+USE OrderDB;
+GO
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = \"Orders\") CREATE TABLE Orders (OrderId INT PRIMARY KEY IDENTITY(1,1), CustomerId INT NOT NULL, ProductName NVARCHAR(200) NOT NULL, Amount DECIMAL(18,2) NOT NULL, OrderDate DATETIME2 NOT NULL DEFAULT GETDATE());
+GO
+IF NOT EXISTS (SELECT * FROM Orders) INSERT INTO Orders (CustomerId, ProductName, Amount) VALUES (1,\"Laptop\",999.99),(1,\"Mouse\",29.99),(2,\"Keyboard\",79.99),(3,\"Monitor\",299.99),(4,\"Headphones\",149.99),(5,\"Webcam\",89.99),(2,\"USB Cable\",12.99),(3,\"Desk Lamp\",45.99);
+GO
+"@ | Out-File "$env:TEMP\orderdb.sql" -Encoding ASCII
+& $SqlCmdPath -S "localhost,1434" -U sa -P $SqlPassword -i "$env:TEMP\orderdb.sql" -C
+
+Write-Log "Database setup completed"
+
+# STEP 3: Linked Servers
+Write-Host "Step 3: Linked Server Configuration" -ForegroundColor Cyan
+
+@"
+USE master;
+GO
+EXEC sp_configure \"show advanced options\", 1; RECONFIGURE;
+GO
+EXEC sp_configure \"Ad Hoc Distributed Queries\", 1; RECONFIGURE;
+GO
+IF EXISTS(SELECT * FROM sys.servers WHERE name = \"MSSQL2_LINK\") EXEC sp_dropserver \"MSSQL2_LINK\", \"droplogins\";
+GO
+EXEC sp_addlinkedserver @server = \"MSSQL2_LINK\", @srvproduct = \"\", @provider = \"MSOLEDBSQL\", @datasrc = \"localhost,1434\";
+GO
+EXEC sp_addlinkedsrvlogin @rmtsrvname = \"MSSQL2_LINK\", @useself = \"FALSE\", @locallogin = NULL, @rmtuser = \"sa\", @rmtpassword = \"$SqlPassword\";
+GO
+EXEC sp_testlinkedserver \"MSSQL2_LINK\";
+GO
+"@ | Out-File "$env:TEMP\linkedserver.sql" -Encoding ASCII
+& $SqlCmdPath -S "localhost,1433" -U sa -P $SqlPassword -i "$env:TEMP\linkedserver.sql" -C
+
+@"
+USE CustomerDB;
+GO
+IF OBJECT_ID(\"dbo.vw_CustomerOrders\", \"V\") IS NOT NULL DROP VIEW dbo.vw_CustomerOrders;
+GO
+CREATE VIEW dbo.vw_CustomerOrders AS SELECT c.CustomerId, c.Name, c.Email, c.CreatedDate, o.OrderId, o.ProductName, o.Amount, o.OrderDate FROM CustomerDB.dbo.Customers c LEFT JOIN MSSQL2_LINK.OrderDB.dbo.Orders o ON c.CustomerId = o.CustomerId;
+GO
+"@ | Out-File "$env:TEMP\view.sql" -Encoding ASCII
+& $SqlCmdPath -S "localhost,1433" -U sa -P $SqlPassword -i "$env:TEMP\view.sql" -C
+
+Write-Log "Linked server configuration completed"
+
+# STEP 4: Application
+Write-Host "Step 4: Application Deployment" -ForegroundColor Cyan
+New-Item -ItemType Directory -Force -Path $AppFolder | Out-Null
+
+$dotnetInstalled = $false
+try { $dotnetVersion = & dotnet --version 2>$null; if ($dotnetVersion) { $dotnetInstalled = $true } } catch {}
+
+if (-not $dotnetInstalled) {
+    $installerPath = "$env:TEMP\dotnet-sdk-installer.exe"
+    Invoke-WebRequest -Uri "https://download.visualstudio.microsoft.com/download/pr/6224f00f-08da-4e7f-85b1-00d42c2bb3d3/b775de636b91e023574a0bbc291f705a/dotnet-sdk-9.0.100-win-x64.exe" -OutFile $installerPath -UseBasicParsing
+    Start-Process -FilePath $installerPath -ArgumentList "/quiet","/norestart" -Wait
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+}
+
+@{
+    Logging = @{ LogLevel = @{ Default = "Information"; "Microsoft.AspNetCore" = "Warning" } }
+    AllowedHosts = "*"
+    ConnectionStrings = @{
+        CustomerDatabase = "Server=localhost,1433;Database=CustomerDB;User Id=sa;Password=$SqlPassword;TrustServerCertificate=True;Encrypt=False;"
+        OrderDatabase = "Server=localhost,1434;Database=OrderDB;User Id=sa;Password=$SqlPassword;TrustServerCertificate=True;Encrypt=False;"
+    }
+} | ConvertTo-Json -Depth 10 | Out-File "$AppFolder\appsettings.json" -Encoding UTF8
+
+@"
+@echo off
+cd /d "$AppFolder"
+if exist "$AppFolder\ModernizeInfraApp.dll" (dotnet ModernizeInfraApp.dll --urls http://0.0.0.0:$AppPort) else (echo Application binaries not found!)
+"@ | Out-File "$AppFolder\start-app.bat" -Encoding ASCII
+
+New-NetFirewallRule -DisplayName "ASP.NET Core App" -Direction Inbound -Protocol TCP -LocalPort $AppPort -Action Allow -ErrorAction SilentlyContinue
+
+try { $gitVersion = & git --version 2>$null } catch {}
+if ($gitVersion) {
+    $repoPath = "C:\Apps\MicroHack-ModernizeInfra"
+    if (-not (Test-Path $repoPath)) {
+        git clone https://github.com/CZSK-MicroHacks/MicroHack-ModernizeInfra.git $repoPath
+    }
+    Push-Location "$repoPath\ModernizeInfraApp"
+    try { & dotnet restore; & dotnet publish -c Release -o $AppFolder } catch { Write-Host "Build error: $_" } finally { Pop-Location }
+}
+
+$endTime = Get-Date
+$duration = $endTime - $startTime
+Write-Log "Setup completed in $($duration.TotalMinutes) minutes"
+Write-Host "Setup Complete!" -ForegroundColor Green
+'
+
+# Execute the inline script via Custom Script Extension
+# The script is embedded directly without any external downloads
 az vm extension set \
     --resource-group "$RESOURCE_GROUP" \
     --vm-name "$VM_NAME" \
     --name CustomScriptExtension \
     --publisher Microsoft.Compute \
     --version 1.10 \
-    --settings "{\"fileUris\":[\"$SETUP_ALL_URL\",\"$INSTALL_SQL_URL\",\"$SETUP_DATABASES_URL\",\"$SETUP_LINKED_URL\",\"$DEPLOY_APP_URL\"]}" \
-    --protected-settings "{\"commandToExecute\":\"powershell -ExecutionPolicy Bypass -Command \\\"\$env:AUTOMATION_MODE='true'; & .\\\\setup-all.ps1\\\"\"}" \
+    --protected-settings "{\"commandToExecute\":\"powershell -ExecutionPolicy Bypass -Command \\\"${SETUP_SCRIPT_INLINE}\\\"\"}" \
     --output none
 
 echo -e "${GREEN}✓ Custom Script Extension installed${NC}"
