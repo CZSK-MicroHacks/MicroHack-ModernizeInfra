@@ -300,12 +300,13 @@ echo -e "${YELLOW}Creating private endpoint for storage account...${NC}"
 if ! az network private-endpoint show \
     --resource-group "$RESOURCE_GROUP" \
     --name "$STORAGE_PE_NAME" &> /dev/null; then
+    STORAGE_ACCOUNT_ID=$(az storage account show --name "$STORAGE_ACCOUNT_NAME" --resource-group "$RESOURCE_GROUP" --query id -o tsv)
     az network private-endpoint create \
         --resource-group "$RESOURCE_GROUP" \
         --name "$STORAGE_PE_NAME" \
         --vnet-name "$VNET_NAME" \
         --subnet "$SUBNET_NAME" \
-        --private-connection-resource-id $(az storage account show --name "$STORAGE_ACCOUNT_NAME" --resource-group "$RESOURCE_GROUP" --query id -o tsv) \
+        --private-connection-resource-id "$STORAGE_ACCOUNT_ID" \
         --group-id blob \
         --connection-name "${STORAGE_ACCOUNT_NAME}-blob-connection" \
         --output none
