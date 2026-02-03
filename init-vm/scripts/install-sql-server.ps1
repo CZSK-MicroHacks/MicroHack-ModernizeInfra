@@ -125,9 +125,15 @@ if ($null -eq $sqlPsModule) {
 Import-Module SqlServer -ErrorAction SilentlyContinue
 
 # Enable TCP/IP and set port for default instance
-$wmi1 = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer
-$uri1 = "ManagedComputer[@Name='$env:COMPUTERNAME']/ServerInstance[@Name='MSSQLSERVER']/ServerProtocol[@Name='Tcp']"
-$tcp1 = $wmi1.GetSmoObject($uri1)
+try {
+    $wmi1 = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer $env:COMPUTERNAME
+    $uri1 = "ManagedComputer[@Name='$env:COMPUTERNAME']/ServerInstance[@Name='MSSQLSERVER']/ServerProtocol[@Name='Tcp']"
+    $tcp1 = $wmi1.GetSmoObject($uri1)
+} catch {
+    Write-Host "Error accessing ManagedComputer for default instance: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host "Attempting alternative configuration method..." -ForegroundColor Yellow
+    throw
+}
 $tcp1.IsEnabled = $true
 $tcp1.Alter()
 
@@ -142,8 +148,14 @@ Write-Host "✓ TCP/IP configured for default instance (port 1433)" -ForegroundC
 # Configure TCP/IP for named instance (port 1434)
 Write-Host "Configuring TCP/IP for named instance..." -ForegroundColor Yellow
 
-$uri2 = "ManagedComputer[@Name='$env:COMPUTERNAME']/ServerInstance[@Name='MSSQL2']/ServerProtocol[@Name='Tcp']"
-$tcp2 = $wmi1.GetSmoObject($uri2)
+try {
+    $uri2 = "ManagedComputer[@Name='$env:COMPUTERNAME']/ServerInstance[@Name='MSSQL2']/ServerProtocol[@Name='Tcp']"
+    $tcp2 = $wmi1.GetSmoObject($uri2)
+} catch {
+    Write-Host "Error accessing ManagedComputer for named instance: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host "Attempting alternative configuration method..." -ForegroundColor Yellow
+    throw
+}
 $tcp2.IsEnabled = $true
 $tcp2.Alter()
 
