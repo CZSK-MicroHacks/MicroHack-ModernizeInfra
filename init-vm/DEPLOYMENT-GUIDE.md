@@ -35,11 +35,7 @@ Ensure you have permissions to create:
 - Virtual Machines
 - Virtual Networks
 - Network Security Groups
-- Public IP Addresses
 - VM Extensions
-- Storage Accounts
-
-**Important:** The deployment script uses Azure AD authentication for storage operations. Ensure your Azure CLI logged-in identity has the **Storage Blob Data Contributor** role assigned at the subscription or resource group level. This is required because the script no longer uses storage account keys (key-based authentication may be disabled for security).
 
 ## Deployment Steps
 
@@ -112,24 +108,18 @@ Ensure you have permissions to create:
 
 ### How It Works
 
-1. **Storage Account Creation**
-   - The deployment script creates an Azure Storage Account
-   - A blob container named "scripts" is created with private access (no public access)
-   - User delegation SAS token (Azure AD-based) with read permissions is generated for secure access (valid for 24 hours)
-   
-2. **Script Upload**
-   - All PowerShell setup scripts are automatically uploaded to the blob container using Azure AD authentication
+1. **Script Retrieval**
+   - The deployment script configures the Custom Script Extension to download scripts directly from the public GitHub repository
    - Scripts include: setup-all.ps1, install-sql-server.ps1, setup-databases.ps1, setup-linked-servers.ps1, deploy-application.ps1
-   - Scripts are accessed using secure user delegation SAS tokens passed in protected settings
-
-3. **Custom Script Extension**
+   
+2. **Custom Script Extension**
    - Automatically installed on the VM after creation
-   - Downloads scripts from blob storage using user delegation SAS token (Azure AD-based) authentication
+   - Downloads scripts from GitHub using public URLs
    - Executes setup-all.ps1 which orchestrates the entire setup
    - Uses `-ExecutionPolicy Bypass` for secure script execution
    - Runs without requiring any RDP connection
 
-4. **Monitoring Progress**
+3. **Monitoring Progress**
    ```bash
    # Check extension provisioning status
    az vm extension list \
@@ -291,53 +281,28 @@ dotnet ModernizeInfraApp.dll --urls "http://0.0.0.0:8080"
 
 ## Automated Configuration
 
-For fully automated deployment using Azure VM Custom Script Extension:
+For fully automated deployment using Azure VM Custom Script Extension that downloads scripts from GitHub:
 
-### Prepare Scripts in Azure Storage
+### Deploy Custom Script Extension
 
-1. **Create Azure Storage Account**
-   ```bash
-   az storage account create \
-     --name scriptstorage$RANDOM \
-     --resource-group rg-modernize-hackathon \
-     --location swedencentral \
-     --sku Standard_LRS
-   ```
+```bash
+# Construct GitHub URLs for scripts
+GITHUB_BASE_URL="https://raw.githubusercontent.com/CZSK-MicroHacks/MicroHack-ModernizeInfra/main/init-vm/scripts"
+SETUP_ALL_URL="${GITHUB_BASE_URL}/setup-all.ps1"
+INSTALL_SQL_URL="${GITHUB_BASE_URL}/install-sql-server.ps1"
+SETUP_DATABASES_URL="${GITHUB_BASE_URL}/setup-databases.ps1"
+SETUP_LINKED_URL="${GITHUB_BASE_URL}/setup-linked-servers.ps1"
+DEPLOY_APP_URL="${GITHUB_BASE_URL}/deploy-application.ps1"
 
-2. **Create container and upload scripts**
-   ```bash
-   # Create container using Azure AD authentication
-   az storage container create \
-     --name scripts \
-     --account-name scriptstorage12345 \
-     --auth-mode login
-   
-   # Upload scripts using Azure AD authentication
-   az storage blob upload-batch \
-     --destination scripts \
-     --source ./scripts \
-     --account-name scriptstorage12345 \
-     --auth-mode login
-   
-   # Generate user delegation SAS token (Azure AD-based)
-   az storage container generate-sas \
-     --name scripts \
-     --account-name scriptstorage12345 \
-     --permissions r \
-     --expiry 2024-12-31 \
-     --auth-mode login \
-     --as-user
-   ```
-
-3. **Deploy Custom Script Extension**
-   ```bash
-   az vm extension set \
-     --resource-group rg-modernize-hackathon \
-     --vm-name vm-onprem-simulator \
-     --name CustomScriptExtension \
-     --publisher Microsoft.Compute \
-     --settings '{"fileUris":["https://scriptstorage12345.blob.core.windows.net/scripts/setup-all.ps1?<SAS-TOKEN>"],"commandToExecute":"powershell -ExecutionPolicy Unrestricted -File setup-all.ps1"}'
-   ```
+# Deploy Custom Script Extension
+az vm extension set \
+  --resource-group rg-modernize-hackathon \
+  --vm-name vm-onprem-simulator \
+  --name CustomScriptExtension \
+  --publisher Microsoft.Compute \
+  --settings "{\"fileUris\":[\"$SETUP_ALL_URL\",\"$INSTALL_SQL_URL\",\"$SETUP_DATABASES_URL\",\"$SETUP_LINKED_URL\",\"$DEPLOY_APP_URL\"]}" \
+  --protected-settings "{\"commandToExecute\":\"powershell -ExecutionPolicy Bypass -Command \\\"\$env:AUTOMATION_MODE='true'; & .\\\\setup-all.ps1\\\"\"}"
+```
 
 ## Verification and Testing
 
