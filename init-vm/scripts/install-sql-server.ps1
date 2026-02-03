@@ -36,7 +36,7 @@ Start-Process -FilePath $SqlSetupPath -ArgumentList "/Action=Download", "/MediaP
 Write-Host "✓ Downloaded SQL Server media" -ForegroundColor Green
 
 # Find the setup.exe in the downloaded media
-$SetupExe = Get-ChildItem -Path $SqlMediaPath -Recurse -Filter "setup.exe" | Select-Object -First 1
+$SetupExe = Get-ChildItem -Path $SqlMediaPath -Recurse -Filter "*.exe" | Select-Object -First 1
 
 if ($null -eq $SetupExe) {
     Write-Host "Error: Could not find setup.exe in downloaded media" -ForegroundColor Red
@@ -218,3 +218,4 @@ Write-Host ""
 Write-Host "Services running:"
 Get-Service | Where-Object { $_.Name -like "*SQL*" -and $_.Status -eq "Running" } | Format-Table -AutoSize
 Write-Host "=================================================="
+
