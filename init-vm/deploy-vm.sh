@@ -255,6 +255,14 @@ CONTAINER_NAME="scripts"
 # Check if storage account already exists in the resource group
 if az storage account show --name "$STORAGE_ACCOUNT_NAME" --resource-group "$RESOURCE_GROUP" &> /dev/null; then
     echo -e "${GREEN}✓ Storage account already exists, reusing: ${STORAGE_ACCOUNT_NAME}${NC}"
+    # Temporarily enable public network access if it's disabled (needed for container operations from local machine)
+    echo -e "${YELLOW}Temporarily enabling public network access for setup operations...${NC}"
+    az storage account update \
+        --name "$STORAGE_ACCOUNT_NAME" \
+        --resource-group "$RESOURCE_GROUP" \
+        --public-network-access Enabled \
+        --output none
+    echo -e "${GREEN}✓ Public network access temporarily enabled${NC}"
 else
     echo -e "${YELLOW}Creating new storage account...${NC}"
     if az storage account create \
@@ -264,7 +272,7 @@ else
         --sku Standard_LRS \
         --kind StorageV2 \
         --allow-blob-public-access false \
-        --public-network-access Disabled \
+        --public-network-access Enabled \
         --output none; then
         echo -e "${GREEN}✓ Storage account created: ${STORAGE_ACCOUNT_NAME}${NC}"
     else
@@ -397,6 +405,16 @@ for script_file in "$SCRIPT_DIR"/*.ps1; do
 done
 
 echo -e "${GREEN}✓ Scripts uploaded successfully${NC}"
+
+# Disable public network access to storage account for enhanced security
+echo -e "${YELLOW}Disabling public network access to storage account...${NC}"
+az storage account update \
+    --name "$STORAGE_ACCOUNT_NAME" \
+    --resource-group "$RESOURCE_GROUP" \
+    --public-network-access Disabled \
+    --output none
+
+echo -e "${GREEN}✓ Public network access disabled - storage now accessible only via private endpoint${NC}"
 
 # Get blob URLs without SAS token (using managed identity)
 SETUP_ALL_URL="https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/${CONTAINER_NAME}/setup-all.ps1"
