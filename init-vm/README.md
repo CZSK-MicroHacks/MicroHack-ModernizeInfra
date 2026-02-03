@@ -188,6 +188,8 @@ Since the VM has **no public IP**, you must use **Azure Bastion** to connect.
 
 **Note:** Bastion tunneling requires Standard SKU or higher. The current deployment uses Developer SKU which does not support tunneling. To use tunneling, upgrade to Standard SKU or use Option 1 (Azure Portal) for connection.
 
+**To upgrade to Standard SKU:** In `deploy-vm.sh`, uncomment the Bastion subnet and public IP sections (lines 157-177), and change the SKU from `Developer` to `Standard` (line 187). You'll also need to add back the `--public-ip-address` parameter and `--enable-tunneling true` flag to the bastion create command.
+
 <details>
 <summary>For Standard SKU deployments (click to expand)</summary>
 
