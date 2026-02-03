@@ -1,4 +1,4 @@
-#
+﻿#
 # Master Setup Script - Runs all installation steps in order
 # This script automates the complete setup of the on-premises simulation environment
 #
