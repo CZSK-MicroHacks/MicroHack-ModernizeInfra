@@ -65,11 +65,8 @@ Write-Host "✓ ISO mounted to drive $DriveLetter`:" -ForegroundColor Green
 # Find setup.exe in the mounted ISO
 if (-not (Test-Path "$DriveLetter`:\setup.exe")) {
     Write-Host "Error: Could not find setup.exe in mounted ISO" -ForegroundColor Red
-    try {
-        Dismount-DiskImage -ImagePath $IsoFile.FullName -ErrorAction SilentlyContinue
-    } catch {
-        # Ignore dismount errors in cleanup path
-    }
+    # Try to cleanup, ignore errors to avoid masking the real issue
+    Dismount-DiskImage -ImagePath $IsoFile.FullName -ErrorAction SilentlyContinue
     exit 1
 }
 
