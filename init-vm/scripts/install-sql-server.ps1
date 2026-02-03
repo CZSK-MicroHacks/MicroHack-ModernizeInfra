@@ -32,16 +32,45 @@ Write-Host "✓ Downloaded SQL Server installer" -ForegroundColor Green
 
 # Download media files
 Write-Host "Downloading SQL Server media files..." -ForegroundColor Yellow
-Start-Process -FilePath $SqlSetupPath -ArgumentList "/Action=Download", "/MediaPath=$SqlMediaPath", "/MediaType=Core", "/Quiet" -Wait
+Start-Process -FilePath $SqlSetupPath -ArgumentList "/Action=Download", "/MediaPath=$SqlMediaPath", "/MediaType=Iso", "/Quiet" -Wait
 Write-Host "✓ Downloaded SQL Server media" -ForegroundColor Green
 
-# Find the setup.exe in the downloaded media
-$SetupExe = Get-ChildItem -Path $SqlMediaPath -Recurse -Filter "*.exe" | Select-Object -First 1
+# Find the ISO file in the downloaded media
+$IsoFile = Get-ChildItem -Path $SqlMediaPath -Filter "*.iso" | Sort-Object Name | Select-Object -First 1
 
-if ($null -eq $SetupExe) {
-    Write-Host "Error: Could not find setup.exe in downloaded media" -ForegroundColor Red
+if ($null -eq $IsoFile) {
+    Write-Host "Error: Could not find ISO file in downloaded media" -ForegroundColor Red
     exit 1
 }
+
+Write-Host "Found ISO at: $($IsoFile.FullName)" -ForegroundColor Green
+
+# Mount the ISO
+Write-Host "Mounting SQL Server ISO..." -ForegroundColor Yellow
+$DriveLetter = $null
+try {
+    $MountResult = Mount-DiskImage -ImagePath $IsoFile.FullName -PassThru -ErrorAction Stop
+    $DriveLetter = ($MountResult | Get-Volume).DriveLetter
+    
+    if ($null -eq $DriveLetter) {
+        throw "Failed to get drive letter from mounted ISO"
+    }
+} catch {
+    Write-Host "Error: Failed to mount ISO: $($_.Exception.Message)" -ForegroundColor Red
+    exit 1
+}
+
+Write-Host "✓ ISO mounted to drive $DriveLetter`:" -ForegroundColor Green
+
+# Find setup.exe in the mounted ISO
+if (-not (Test-Path "$DriveLetter`:\setup.exe")) {
+    Write-Host "Error: Could not find setup.exe in mounted ISO" -ForegroundColor Red
+    # Try to cleanup, ignore errors to avoid masking the real issue
+    Dismount-DiskImage -ImagePath $IsoFile.FullName -ErrorAction SilentlyContinue
+    exit 1
+}
+
+$SetupExe = Get-Item -Path "$DriveLetter`:\setup.exe"
 
 Write-Host "Found setup.exe at: $($SetupExe.FullName)" -ForegroundColor Green
 
@@ -106,6 +135,19 @@ $ConfigContent2 | Out-File -FilePath $ConfigFile2 -Encoding ASCII
 Start-Process -FilePath $SetupExe.FullName -ArgumentList "/ConfigurationFile=$ConfigFile2" -Wait -NoNewWindow
 
 Write-Host "✓ Named instance MSSQL2 installed" -ForegroundColor Green
+
+# Dismount the ISO as installations are complete
+Write-Host ""
+Write-Host "Dismounting SQL Server ISO..." -ForegroundColor Yellow
+try {
+    Dismount-DiskImage -ImagePath $IsoFile.FullName
+    Write-Host "✓ ISO dismounted" -ForegroundColor Green
+} catch {
+    Write-Host "Warning: Failed to dismount ISO: $($_.Exception.Message)" -ForegroundColor Yellow
+    if ($DriveLetter) {
+        Write-Host "You may need to manually dismount the ISO from drive $DriveLetter`:" -ForegroundColor Yellow
+    }
+}
 
 # Wait for services to start
 Write-Host ""
