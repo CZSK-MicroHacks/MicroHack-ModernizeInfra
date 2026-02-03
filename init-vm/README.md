@@ -186,8 +186,15 @@ Since the VM has **no public IP**, you must use **Azure Bastion** to connect.
 
 #### Option 2: Connect via Azure CLI with Bastion Tunnel
 
+**Note:** Bastion tunneling requires Standard SKU or higher. The current deployment uses Developer SKU which does not support tunneling. To use tunneling, upgrade to Standard SKU or use Option 1 (Azure Portal) for connection.
+
+**To upgrade to Standard SKU:** In `deploy-vm.sh`, uncomment the Bastion subnet and public IP sections (lines 157-177), and change the SKU from `Developer` to `Standard` (line 187). You'll also need to add back the `--public-ip-address` parameter and `--enable-tunneling true` flag to the bastion create command.
+
+<details>
+<summary>For Standard SKU deployments (click to expand)</summary>
+
 ```bash
-# RDP tunnel through Bastion
+# RDP tunnel through Bastion (requires Standard SKU)
 az network bastion tunnel \
   --name vm-onprem-simulator-bastion \
   --resource-group rg-modernize-hackathon \
@@ -197,6 +204,7 @@ az network bastion tunnel \
 ```
 
 Then connect your RDP client to `localhost:3389`.
+</details>
 
 #### Option 3: Use Entra ID Authentication
 
@@ -385,14 +393,16 @@ az group delete --name rg-modernize-hackathon --yes --no-wait
 Approximate Azure costs (Sweden Central region):
 - **VM (Standard_D4s_v3)**: ~$0.192/hour (~$140/month)
 - **Managed Disk (128 GB Premium)**: ~$25/month
-- **Azure Bastion (Standard SKU)**: ~$140/month
+- **Azure Bastion (Developer SKU)**: Free (for dev/test scenarios)
 - **Private Endpoint**: ~$10/month
 - **Storage Account**: ~$2/month
 - **Bandwidth**: Variable based on usage
 
-**Estimated total**: ~$317/month (when running 24/7)
+**Estimated total**: ~$177/month (when running 24/7)
 
-**Note:** The previous version with public IP cost ~$170/month. The additional ~$147/month provides enhanced security through Bastion and private endpoints, eliminating direct internet exposure.
+**Note:** The Developer SKU is free and perfect for dev/test scenarios. It supports one concurrent connection and does not require a public IP address or dedicated subnet, reducing both cost and complexity.
+
+⚠️ **Important:** The Developer SKU is intended for non-production use only. For production workloads, use Standard or Premium SKU which provide reliability guarantees, support SLAs, and additional features like tunneling and multiple concurrent connections.
 
 **Cost-saving tips for hackathon:**
 - Deallocate VM when not in use: `az vm deallocate`
