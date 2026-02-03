@@ -47,6 +47,7 @@ Write-Host "Found ISO at: $($IsoFile.FullName)" -ForegroundColor Green
 
 # Mount the ISO
 Write-Host "Mounting SQL Server ISO..." -ForegroundColor Yellow
+$DriveLetter = $null
 try {
     $MountResult = Mount-DiskImage -ImagePath $IsoFile.FullName -PassThru -ErrorAction Stop
     $DriveLetter = ($MountResult | Get-Volume).DriveLetter
