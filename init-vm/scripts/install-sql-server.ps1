@@ -1,6 +1,6 @@
 ﻿#
 # Install SQL Server 2022 Developer Edition with Two Instances
-# This script installs SQL Server with a default instance (port 1433) and a named instance (port 1434)
+# This script installs SQL Server with a default instance (port 1433) and a named instance (port 1435)
 #
 
 # Require Administrator
@@ -105,9 +105,9 @@ Start-Process -FilePath $SetupExe.FullName -ArgumentList "/ConfigurationFile=$Co
 
 Write-Host "✓ Default instance installed" -ForegroundColor Green
 
-# Install Named Instance (MSSQL2) on port 1434
+# Install Named Instance (MSSQL2) on port 1435
 Write-Host ""
-Write-Host "Installing SQL Server Named Instance MSSQL2 (Port 1434)..." -ForegroundColor Yellow
+Write-Host "Installing SQL Server Named Instance MSSQL2 (Port 1435)..." -ForegroundColor Yellow
 
 $ConfigFile2 = "$DownloadFolder\ConfigurationFile2.ini"
 $ConfigContent2 = @"
@@ -190,7 +190,7 @@ try {
 
 Write-Host "✓ TCP/IP configured for default instance (port 1433)" -ForegroundColor Green
 
-# Configure TCP/IP for named instance (port 1434)
+# Configure TCP/IP for named instance (port 1435)
 Write-Host "Configuring TCP/IP for named instance..." -ForegroundColor Yellow
 
 try {
@@ -199,9 +199,9 @@ try {
     $tcp2.IsEnabled = $true
     $tcp2.Alter()
     
-    # Set static port 1434
+    # Set static port 1435
     $ipAll2 = $tcp2.IPAddresses | Where-Object { $_.Name -eq "IPAll" }
-    $ipAll2.IPAddressProperties["TcpPort"].Value = "1434"
+    $ipAll2.IPAddressProperties["TcpPort"].Value = "1435"
     $ipAll2.IPAddressProperties["TcpDynamicPorts"].Value = ""
     $tcp2.Alter()
 } catch {
@@ -210,7 +210,7 @@ try {
     throw
 }
 
-Write-Host "✓ TCP/IP configured for named instance (port 1434)" -ForegroundColor Green
+Write-Host "✓ TCP/IP configured for named instance (port 1435)" -ForegroundColor Green
 
 # Restart SQL Server services
 Write-Host ""
@@ -236,14 +236,14 @@ New-NetFirewallRule -DisplayName "SQL Server Default Instance" `
 New-NetFirewallRule -DisplayName "SQL Server Named Instance MSSQL2" `
     -Direction Inbound `
     -Protocol TCP `
-    -LocalPort 1434 `
+    -LocalPort 1435 `
     -Action Allow `
     -ErrorAction SilentlyContinue
 
 New-NetFirewallRule -DisplayName "SQL Server Browser" `
     -Direction Inbound `
     -Protocol UDP `
-    -LocalPort 1434 `
+    -LocalPort 1435 `
     -Action Allow `
     -ErrorAction SilentlyContinue
 
@@ -258,8 +258,8 @@ if (Test-Path $sqlcmdPath) {
     Write-Host "Testing default instance (port 1433)..." -ForegroundColor Cyan
     & $sqlcmdPath -S "localhost,1433" -U sa -P $SqlPassword -Q "SELECT @@VERSION" -C
     
-    Write-Host "Testing named instance (port 1434)..." -ForegroundColor Cyan
-    & $sqlcmdPath -S "localhost,1434" -U sa -P $SqlPassword -Q "SELECT @@VERSION" -C
+    Write-Host "Testing named instance (port 1435)..." -ForegroundColor Cyan
+    & $sqlcmdPath -S "localhost,1435" -U sa -P $SqlPassword -Q "SELECT @@VERSION" -C
 } else {
     Write-Host "Warning: sqlcmd not found at expected path, skipping connectivity test" -ForegroundColor Yellow
 }
@@ -269,7 +269,7 @@ Write-Host "=================================================="
 Write-Host "  SQL Server Installation Complete!"
 Write-Host "=================================================="
 Write-Host "Default Instance: localhost,1433"
-Write-Host "Named Instance:   localhost,1434"
+Write-Host "Named Instance:   localhost,1435"
 Write-Host "SA Password:      $SqlPassword"
 Write-Host ""
 Write-Host "Services running:"

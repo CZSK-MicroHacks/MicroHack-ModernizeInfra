@@ -56,7 +56,7 @@ The init-vm setup creates:
 │  │   │           │                             │    │    │
 │  │   │  ┌────────▼────────┐                   │    │    │
 │  │   │  │  SQL Instance 2 │                   │    │    │
-│  │   │  │   (Port 1434)   │                   │    │    │
+│  │   │  │   (Port 1435)   │                   │    │    │
 │  │   │  │     OrderDB     │                   │    │    │
 │  │   │  └─────────────────┘                   │    │    │
 │  │   └─────────────────────────────────────────┘    │    │
@@ -131,7 +131,7 @@ This script will:
 The VM will automatically:
 1. Download installation scripts from GitHub
 2. Install SQL Server 2022 Developer Edition
-3. Configure two SQL Server instances (ports 1433 and 1434)
+3. Configure two SQL Server instances (ports 1433 and 1435)
 4. Create CustomerDB and OrderDB databases with sample data
 5. Set up linked server configuration
 6. Install .NET 10 SDK and Runtime
@@ -218,7 +218,7 @@ Main deployment script using Azure CLI to:
 PowerShell script (downloaded and executed automatically via VM extension) to:
 - Download SQL Server 2022 Developer Edition
 - Install default instance (port 1433)
-- Install named instance MSSQL2 (port 1434)
+- Install named instance MSSQL2 (port 1435)
 - Configure Windows Firewall rules
 - Enable SQL Server authentication
 
@@ -257,8 +257,8 @@ RDP into the VM and run:
 # Test default instance (port 1433)
 sqlcmd -S localhost,1433 -U sa -P YourStrongPass123! -Q "SELECT @@SERVERNAME, @@VERSION"
 
-# Test named instance (port 1434)
-sqlcmd -S localhost,1434 -U sa -P YourStrongPass123! -Q "SELECT @@SERVERNAME, @@VERSION"
+# Test named instance (port 1435)
+sqlcmd -S localhost,1435 -U sa -P YourStrongPass123! -Q "SELECT @@SERVERNAME, @@VERSION"
 ```
 
 ### Test Linked Servers
@@ -315,7 +315,7 @@ C:\WindowsAzure\Logs\Plugins\Microsoft.Compute.CustomScriptExtension\
 3. Test local connectivity:
    ```powershell
    Test-NetConnection localhost -Port 1433
-   Test-NetConnection localhost -Port 1434
+   Test-NetConnection localhost -Port 1435
    ```
 
 ### Application Not Starting

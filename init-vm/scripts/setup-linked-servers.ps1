@@ -53,7 +53,7 @@ EXEC sp_addlinkedserver
     @server = 'MSSQL2_LINK',
     @srvproduct = '',
     @provider = 'MSOLEDBSQL',
-    @datasrc = 'localhost,1434';
+    @datasrc = 'localhost,1435';
 GO
 
 PRINT 'Linked server created';
@@ -190,7 +190,7 @@ Write-Host "  Linked Server Setup Complete!"
 Write-Host "=================================================="
 Write-Host "Linked Server Name: MSSQL2_LINK"
 Write-Host "Source: localhost,1433 (CustomerDB)"
-Write-Host "Target: localhost,1434 (OrderDB)"
+Write-Host "Target: localhost,1435 (OrderDB)"
 Write-Host ""
 Write-Host "Cross-Database View: CustomerDB.dbo.vw_CustomerOrders"
 Write-Host ""

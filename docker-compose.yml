@@ -29,7 +29,7 @@ services:
       - SA_PASSWORD=YourStrong@Passw0rd
       - MSSQL_PID=Developer
     ports:
-      - "1434:1433"
+      - "1435:1433"
     volumes:
       - sqlserver2-data:/var/opt/mssql
       - ./sql-scripts:/docker-entrypoint-initdb.d
