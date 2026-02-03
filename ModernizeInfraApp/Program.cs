@@ -8,11 +8,14 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
 // Configure database contexts for two separate databases
-var customerConnectionString = builder.Configuration.GetConnectionString("CustomerDatabase")
-    ?? "Server=sqlserver1,1433;Database=CustomerDB;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;";
+var customerConnectionString = builder.Configuration.GetConnectionString("CustomerDatabase");
 
-var orderConnectionString = builder.Configuration.GetConnectionString("OrderDatabase")
-    ?? "Server=sqlserver2,1433;Database=OrderDB;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;";
+var orderConnectionString = builder.Configuration.GetConnectionString("OrderDatabase");
+
+if (string.IsNullOrWhiteSpace(customerConnectionString) || string.IsNullOrWhiteSpace(orderConnectionString))
+{
+    throw new InvalidOperationException("Connection strings for CustomerDatabase and OrderDatabase are required.");
+}
 
 builder.Services.AddDbContext<CustomerDbContext>(options =>
     options.UseSqlServer(customerConnectionString));
@@ -47,7 +50,7 @@ try
 }
 catch (Exception ex)
 {
-    app.Logger.LogError(ex, "Database initialization failed. The API will continue to run, but data operations may fail until the database is available.");
+    app.Logger.LogError(ex, "Database initialization failed. The application will continue to run and serve the frontend, but data operations may fail until the database is available.");
 }
 
 app.MapControllers();
