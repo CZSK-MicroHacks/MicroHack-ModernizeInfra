@@ -32,7 +32,7 @@ Write-Host "✓ Downloaded SQL Server installer" -ForegroundColor Green
 
 # Download media files
 Write-Host "Downloading SQL Server media files..." -ForegroundColor Yellow
-Start-Process -FilePath $SqlSetupPath -ArgumentList "/Action=Download", "/MediaPath=$SqlMediaPath", "/MediaType=Cab", "/Quiet" -Wait
+Start-Process -FilePath $SqlSetupPath -ArgumentList "/Action=Download", "/MediaPath=$SqlMediaPath", "/MediaType=Advanced", "/Quiet" -Wait
 Write-Host "✓ Downloaded SQL Server media" -ForegroundColor Green
 
 # Find the setup.exe in the downloaded media
