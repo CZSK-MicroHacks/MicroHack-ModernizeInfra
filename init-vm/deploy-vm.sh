@@ -254,11 +254,24 @@ echo "Reading consolidated setup script..."
 
 # Read the PowerShell script content and base64 encode it
 # This allows us to pass it safely through JSON without escaping issues
-SCRIPT_CONTENT_B64=$(cat "$SETUP_SCRIPT_PATH" | base64 -w 0)
+# Use cross-platform base64 encoding (remove newlines for compatibility)
+SCRIPT_CONTENT_B64=$(cat "$SETUP_SCRIPT_PATH" | base64 | tr -d '\n')
 
 # Create a wrapper PowerShell command that decodes and executes the embedded script
 # The actual setup script is base64-encoded and embedded directly
-WRAPPER_CMD='$ErrorActionPreference="Stop";$env:AUTOMATION_MODE="true";$b64=[System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String(\"'${SCRIPT_CONTENT_B64}'\"));$f=\"$env:TEMP\setup-inline.ps1\";$b64|Out-File -FilePath $f -Encoding UTF8;Write-Host \"Executing embedded setup script...\";& $f'
+WRAPPER_CMD=$(cat << 'EOF'
+$ErrorActionPreference="Stop";
+$env:AUTOMATION_MODE="true";
+$b64=[System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String("BASE64_PLACEHOLDER"));
+$f="$env:TEMP\setup-inline.ps1";
+$b64|Out-File -FilePath $f -Encoding UTF8;
+Write-Host "Executing embedded setup script...";
+& $f
+EOF
+)
+
+# Replace placeholder with actual base64 content
+WRAPPER_CMD="${WRAPPER_CMD/BASE64_PLACEHOLDER/$SCRIPT_CONTENT_B64}"
 
 # Execute via Custom Script Extension with the embedded script
 az vm extension set \

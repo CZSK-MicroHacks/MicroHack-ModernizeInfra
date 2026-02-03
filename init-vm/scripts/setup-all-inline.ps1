@@ -17,6 +17,8 @@ $isNonInteractive = [Environment]::UserInteractive -eq $false -or $env:AUTOMATIO
 Write-Host "Running in automated mode" -ForegroundColor Green
 
 # Configuration
+# Note: SQL password is hardcoded for this hackathon/demo environment
+# In production, use Azure Key Vault or secure parameter passing
 $SqlPassword = "YourStrongPass123!"
 $AppFolder = "C:\Apps\ModernizeInfraApp"
 $AppPort = 8080
@@ -525,6 +527,8 @@ try {
 }
 
 if ($gitInstalled) {
+    # Note: Cloning application source code from GitHub is intentional
+    # This PR eliminates downloading setup SCRIPTS from GitHub, not application code
     Write-Host "Cloning repository..." -ForegroundColor Yellow
     $repoPath = "C:\Apps\MicroHack-ModernizeInfra"
     
