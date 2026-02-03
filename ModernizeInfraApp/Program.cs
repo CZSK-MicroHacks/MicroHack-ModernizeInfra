@@ -40,15 +40,13 @@ app.UseDefaultFiles();
 app.UseStaticFiles();
 
 // Initialize databases
-using var scope = app.Services.CreateScope();
-var customerDb = scope.ServiceProvider.GetRequiredService<CustomerDbContext>();
-var orderDb = scope.ServiceProvider.GetRequiredService<OrderDbContext>();
-
 try
 {
+    using var scope = app.Services.CreateScope();
+    var customerDb = scope.ServiceProvider.GetRequiredService<CustomerDbContext>();
     await customerDb.Database.EnsureCreatedAsync();
 }
-catch (Exception ex) when (ex is SqlException || ex is DbUpdateException)
+catch (Exception ex)
 {
     app.Logger.LogError(
         ex,
@@ -58,9 +56,11 @@ catch (Exception ex) when (ex is SqlException || ex is DbUpdateException)
 
 try
 {
+    using var scope = app.Services.CreateScope();
+    var orderDb = scope.ServiceProvider.GetRequiredService<OrderDbContext>();
     await orderDb.Database.EnsureCreatedAsync();
 }
-catch (Exception ex) when (ex is SqlException || ex is DbUpdateException)
+catch (Exception ex)
 {
     app.Logger.LogError(
         ex,
