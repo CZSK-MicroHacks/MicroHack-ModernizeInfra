@@ -46,7 +46,7 @@ try
     var customerDb = scope.ServiceProvider.GetRequiredService<CustomerDbContext>();
     await customerDb.Database.EnsureCreatedAsync();
 }
-catch (Exception ex)
+catch (Exception ex) when (ex is SqlException || ex is DbUpdateException)
 {
     app.Logger.LogError(
         ex,
@@ -60,7 +60,7 @@ try
     var orderDb = scope.ServiceProvider.GetRequiredService<OrderDbContext>();
     await orderDb.Database.EnsureCreatedAsync();
 }
-catch (Exception ex)
+catch (Exception ex) when (ex is SqlException || ex is DbUpdateException)
 {
     app.Logger.LogError(
         ex,
