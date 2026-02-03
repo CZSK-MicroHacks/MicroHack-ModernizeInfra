@@ -243,7 +243,7 @@ New-NetFirewallRule -DisplayName "SQL Server Named Instance MSSQL2" `
 New-NetFirewallRule -DisplayName "SQL Server Browser" `
     -Direction Inbound `
     -Protocol UDP `
-    -LocalPort 1435 `
+    -LocalPort 1434 `
     -Action Allow `
     -ErrorAction SilentlyContinue
 
