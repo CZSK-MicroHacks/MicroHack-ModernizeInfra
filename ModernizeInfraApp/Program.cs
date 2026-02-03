@@ -40,20 +40,31 @@ app.UseDefaultFiles();
 app.UseStaticFiles();
 
 // Initialize databases
+using var scope = app.Services.CreateScope();
+var customerDb = scope.ServiceProvider.GetRequiredService<CustomerDbContext>();
+var orderDb = scope.ServiceProvider.GetRequiredService<OrderDbContext>();
+
 try
 {
-    using var scope = app.Services.CreateScope();
-    var customerDb = scope.ServiceProvider.GetRequiredService<CustomerDbContext>();
-    var orderDb = scope.ServiceProvider.GetRequiredService<OrderDbContext>();
-
     await customerDb.Database.EnsureCreatedAsync();
-    await orderDb.Database.EnsureCreatedAsync();
 }
-catch (Exception ex) when (ex is SqlException || ex is TimeoutException)
+catch (Exception ex) when (ex is SqlException || ex is TimeoutException || ex is DbUpdateException)
 {
     app.Logger.LogError(
         ex,
-        "Database initialization failed. Frontend remains available but data operations will fail until database connectivity is restored. Hint: {Hint}",
+        "CustomerDatabase initialization failed. Frontend remains available but data operations will fail until database connectivity is restored. Hint: {Hint}",
+        "Check connection strings and database availability.");
+}
+
+try
+{
+    await orderDb.Database.EnsureCreatedAsync();
+}
+catch (Exception ex) when (ex is SqlException || ex is TimeoutException || ex is DbUpdateException)
+{
+    app.Logger.LogError(
+        ex,
+        "OrderDatabase initialization failed. Frontend remains available but data operations will fail until database connectivity is restored. Hint: {Hint}",
         "Check connection strings and database availability.");
 }
 
