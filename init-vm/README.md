@@ -386,10 +386,13 @@ Approximate Azure costs (Sweden Central region):
 - **VM (Standard_D4s_v3)**: ~$0.192/hour (~$140/month)
 - **Managed Disk (128 GB Premium)**: ~$25/month
 - **Azure Bastion (Standard SKU)**: ~$140/month
+- **Private Endpoint**: ~$10/month
 - **Storage Account**: ~$2/month
 - **Bandwidth**: Variable based on usage
 
-**Estimated total**: ~$310/month (when running 24/7)
+**Estimated total**: ~$317/month (when running 24/7)
+
+**Note:** The previous version with public IP cost ~$170/month. The additional ~$147/month provides enhanced security through Bastion and private endpoints, eliminating direct internet exposure.
 
 **Cost-saving tips for hackathon:**
 - Deallocate VM when not in use: `az vm deallocate`

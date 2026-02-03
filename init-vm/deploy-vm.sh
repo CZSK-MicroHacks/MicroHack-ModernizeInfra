@@ -56,8 +56,12 @@ VM_NAME=${VM_NAME:-$DEFAULT_VM_NAME}
 read -p "Admin Username [${DEFAULT_ADMIN_USERNAME}]: " ADMIN_USERNAME
 ADMIN_USERNAME=${ADMIN_USERNAME:-$DEFAULT_ADMIN_USERNAME}
 
-# Generate a random strong password for local admin
-ADMIN_PASSWORD=$(openssl rand -base64 32 | tr -d "=+/" | cut -c1-20)
+# Generate a random strong password for local admin that meets Windows complexity requirements
+# Password must contain: uppercase, lowercase, numbers, and special characters
+# Generate 3 segments and combine: uppercase+lowercase (8 chars), numbers (4 chars), special chars (4 chars)
+ADMIN_PASSWORD="$(openssl rand -base64 6 | tr -dc 'A-Za-z' | cut -c1-8)$(openssl rand -base64 4 | tr -dc '0-9' | cut -c1-4)$(openssl rand -base64 4 | tr -dc '!@#$%^&*' | cut -c1-4)"
+# Shuffle the password to mix character types
+ADMIN_PASSWORD=$(echo "$ADMIN_PASSWORD" | fold -w1 | shuf | tr -d '\n')
 echo -e "${GREEN}Generated strong random password for local admin user${NC}"
 
 # Derived names
@@ -158,6 +162,7 @@ az network public-ip create \
     --resource-group "$RESOURCE_GROUP" \
     --name "$BASTION_IP_NAME" \
     --sku Standard \
+    --allocation-method Static \
     --location "$LOCATION" \
     --output none
 
@@ -317,13 +322,21 @@ fi
 
 # Create DNS zone group for automatic DNS registration
 echo -e "${YELLOW}Configuring private DNS zone group...${NC}"
-az network private-endpoint dns-zone-group create \
+if ! az network private-endpoint dns-zone-group show \
     --resource-group "$RESOURCE_GROUP" \
     --endpoint-name "$STORAGE_PE_NAME" \
-    --name "default" \
-    --private-dns-zone "$PRIVATE_DNS_ZONE" \
-    --zone-name "blob" \
-    --output none 2>/dev/null || echo -e "${GREEN}✓ DNS zone group already configured${NC}"
+    --name "default" &> /dev/null; then
+    az network private-endpoint dns-zone-group create \
+        --resource-group "$RESOURCE_GROUP" \
+        --endpoint-name "$STORAGE_PE_NAME" \
+        --name "default" \
+        --private-dns-zone "$PRIVATE_DNS_ZONE" \
+        --zone-name "blob" \
+        --output none
+    echo -e "${GREEN}✓ DNS zone group created${NC}"
+else
+    echo -e "${GREEN}✓ DNS zone group already exists${NC}"
+fi
 
 echo -e "${GREEN}✓ Private endpoint fully configured with DNS${NC}"
 
