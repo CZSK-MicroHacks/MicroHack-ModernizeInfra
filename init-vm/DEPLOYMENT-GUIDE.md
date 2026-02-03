@@ -290,9 +290,13 @@ For fully automated deployment using Azure VM Custom Script Extension that downl
 
 ### Deploy Custom Script Extension
 
-**Note:** The following example assumes you've defined the GitHub URL variables. If running commands individually, first define the variables:
+**Note:** The following example assumes you've defined the necessary variables. If running commands individually, first define the variables:
 
 ```bash
+# Define resource and VM names (adjust as needed)
+RESOURCE_GROUP="rg-modernize-hackathon"
+VM_NAME="vm-onprem-simulator"
+
 # Define script URLs
 GITHUB_BASE_URL="https://raw.githubusercontent.com/CZSK-MicroHacks/MicroHack-ModernizeInfra/main/init-vm/scripts"
 SETUP_ALL_URL="${GITHUB_BASE_URL}/setup-all.ps1"
@@ -303,8 +307,8 @@ DEPLOY_APP_URL="${GITHUB_BASE_URL}/deploy-application.ps1"
 
 # Deploy Custom Script Extension
 az vm extension set \
-  --resource-group rg-modernize-hackathon \
-  --vm-name vm-onprem-simulator \
+  --resource-group "$RESOURCE_GROUP" \
+  --vm-name "$VM_NAME" \
   --name CustomScriptExtension \
   --publisher Microsoft.Compute \
   --settings "{\"fileUris\":[\"$SETUP_ALL_URL\",\"$INSTALL_SQL_URL\",\"$SETUP_DATABASES_URL\",\"$SETUP_LINKED_URL\",\"$DEPLOY_APP_URL\"]}" \
