@@ -64,7 +64,11 @@ Write-Host "✓ ISO mounted to drive $DriveLetter`:" -ForegroundColor Green
 # Find setup.exe in the mounted ISO
 if (-not (Test-Path "$DriveLetter`:\setup.exe")) {
     Write-Host "Error: Could not find setup.exe in mounted ISO" -ForegroundColor Red
-    Dismount-DiskImage -ImagePath $IsoFile.FullName
+    try {
+        Dismount-DiskImage -ImagePath $IsoFile.FullName -ErrorAction SilentlyContinue
+    } catch {
+        # Ignore dismount errors in cleanup path
+    }
     exit 1
 }
 
@@ -142,7 +146,9 @@ try {
     Write-Host "✓ ISO dismounted" -ForegroundColor Green
 } catch {
     Write-Host "Warning: Failed to dismount ISO: $($_.Exception.Message)" -ForegroundColor Yellow
-    Write-Host "You may need to manually dismount the ISO from drive $DriveLetter`:" -ForegroundColor Yellow
+    if ($DriveLetter) {
+        Write-Host "You may need to manually dismount the ISO from drive $DriveLetter`:" -ForegroundColor Yellow
+    }
 }
 
 # Wait for services to start
