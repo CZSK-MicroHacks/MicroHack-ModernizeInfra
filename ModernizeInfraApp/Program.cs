@@ -1,3 +1,4 @@
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using ModernizeInfraApp.Data;
 
@@ -48,7 +49,7 @@ try
     await customerDb.Database.EnsureCreatedAsync();
     await orderDb.Database.EnsureCreatedAsync();
 }
-catch (Exception ex)
+catch (Exception ex) when (ex is SqlException || ex is TimeoutException)
 {
     app.Logger.LogError(
         ex,
