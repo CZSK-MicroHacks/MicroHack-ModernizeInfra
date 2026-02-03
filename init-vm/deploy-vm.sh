@@ -257,11 +257,15 @@ if az storage account show --name "$STORAGE_ACCOUNT_NAME" --resource-group "$RES
     echo -e "${GREEN}✓ Storage account already exists, reusing: ${STORAGE_ACCOUNT_NAME}${NC}"
     # Temporarily enable public network access if it's disabled (needed for container operations from local machine)
     echo -e "${YELLOW}Temporarily enabling public network access for setup operations...${NC}"
-    az storage account update \
+    if ! az storage account update \
         --name "$STORAGE_ACCOUNT_NAME" \
         --resource-group "$RESOURCE_GROUP" \
         --public-network-access Enabled \
-        --output none
+        --output none; then
+        echo -e "${RED}Error: Failed to enable public network access on storage account${NC}"
+        echo "This is required for setup operations from the local machine."
+        exit 1
+    fi
     echo -e "${GREEN}✓ Public network access temporarily enabled${NC}"
 else
     echo -e "${YELLOW}Creating new storage account...${NC}"
@@ -408,13 +412,24 @@ echo -e "${GREEN}✓ Scripts uploaded successfully${NC}"
 
 # Disable public network access to storage account for enhanced security
 echo -e "${YELLOW}Disabling public network access to storage account...${NC}"
-az storage account update \
+if ! az storage account update \
     --name "$STORAGE_ACCOUNT_NAME" \
     --resource-group "$RESOURCE_GROUP" \
     --public-network-access Disabled \
-    --output none
-
-echo -e "${GREEN}✓ Public network access disabled - storage now accessible only via private endpoint${NC}"
+    --output none; then
+    echo -e "${RED}⚠️  WARNING: Failed to disable public network access on storage account!${NC}"
+    echo -e "${RED}   Security risk: Storage account remains publicly accessible.${NC}"
+    echo -e "${YELLOW}   Please manually disable public network access using:${NC}"
+    echo "   az storage account update --name $STORAGE_ACCOUNT_NAME --resource-group $RESOURCE_GROUP --public-network-access Disabled"
+    echo ""
+    read -p "Continue with deployment anyway? (yes/no): " CONTINUE_UNSAFE
+    if [[ "$CONTINUE_UNSAFE" != "yes" ]]; then
+        echo "Deployment cancelled due to security concern."
+        exit 1
+    fi
+else
+    echo -e "${GREEN}✓ Public network access disabled - storage now accessible only via private endpoint${NC}"
+fi
 
 # Get blob URLs without SAS token (using managed identity)
 SETUP_ALL_URL="https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/${CONTAINER_NAME}/setup-all.ps1"
