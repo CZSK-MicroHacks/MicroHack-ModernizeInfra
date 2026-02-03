@@ -285,8 +285,10 @@ For fully automated deployment using Azure VM Custom Script Extension that downl
 
 ### Deploy Custom Script Extension
 
+**Note:** The following example assumes you've defined the GitHub URL variables. If running commands individually, first define the variables:
+
 ```bash
-# Construct GitHub URLs for scripts
+# Define script URLs
 GITHUB_BASE_URL="https://raw.githubusercontent.com/CZSK-MicroHacks/MicroHack-ModernizeInfra/main/init-vm/scripts"
 SETUP_ALL_URL="${GITHUB_BASE_URL}/setup-all.ps1"
 INSTALL_SQL_URL="${GITHUB_BASE_URL}/install-sql-server.ps1"

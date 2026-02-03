@@ -17,6 +17,7 @@ The init-vm setup creates:
 ✅ **VM has NO public IP address** - All access through Azure Bastion
 ✅ **Entra ID authentication enabled** - Use Azure AD credentials for VM access
 ✅ **Random generated password** - Strong password for local admin account
+✅ **Scripts from version-controlled source** - Setup scripts are downloaded from the public GitHub repository, ensuring version control, transparency, and no secrets in scripts
 
 ## Architecture
 
@@ -345,6 +346,7 @@ az group delete --name rg-modernize-hackathon --yes --no-wait
 2. **Azure Bastion** - Secure RDP access without exposing RDP port to the internet
 3. **Entra ID Authentication** - Azure AD login enabled for VM access
 4. **Random Generated Passwords** - Strong passwords automatically generated
+5. **Version-Controlled Scripts** - Setup scripts from public GitHub ensure transparency and auditability
 
 ⚠️ **Additional Notes:**
 
