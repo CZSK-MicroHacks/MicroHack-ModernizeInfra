@@ -154,38 +154,37 @@ az network vnet create \
     --subnet-prefix 10.0.1.0/24 \
     --output none
 
-# Create Bastion subnet (required name and minimum /26 prefix)
-az network vnet subnet create \
-    --resource-group "$RESOURCE_GROUP" \
-    --vnet-name "$VNET_NAME" \
-    --name "$BASTION_SUBNET_NAME" \
-    --address-prefix 10.0.2.0/26 \
-    --output none
+# Create Bastion subnet (not required for Developer SKU)
+# Developer SKU does not require a dedicated AzureBastionSubnet or public IP
+# az network vnet subnet create \
+#     --resource-group "$RESOURCE_GROUP" \
+#     --vnet-name "$VNET_NAME" \
+#     --name "$BASTION_SUBNET_NAME" \
+#     --address-prefix 10.0.2.0/26 \
+#     --output none
 
 echo -e "${GREEN}✓ Virtual network and subnets created${NC}"
 
-# Create public IP for Bastion (Standard SKU required)
-echo -e "${YELLOW}Creating public IP address for Bastion...${NC}"
-az network public-ip create \
-    --resource-group "$RESOURCE_GROUP" \
-    --name "$BASTION_IP_NAME" \
-    --sku Standard \
-    --allocation-method Static \
-    --location "$LOCATION" \
-    --output none
-
-echo -e "${GREEN}✓ Public IP for Bastion created${NC}"
+# Create public IP for Bastion (not required for Developer SKU)
+# echo -e "${YELLOW}Creating public IP address for Bastion...${NC}"
+# az network public-ip create \
+#     --resource-group "$RESOURCE_GROUP" \
+#     --name "$BASTION_IP_NAME" \
+#     --sku Standard \
+#     --allocation-method Static \
+#     --location "$LOCATION" \
+#     --output none
+# 
+# echo -e "${GREEN}✓ Public IP for Bastion created${NC}"
 
 # Create Azure Bastion (this takes several minutes)
-echo -e "${YELLOW}Creating Azure Bastion (this may take 5-10 minutes)...${NC}"
+echo -e "${YELLOW}Creating Azure Bastion with Developer SKU (this may take 5-10 minutes)...${NC}"
 az network bastion create \
     --resource-group "$RESOURCE_GROUP" \
     --name "$BASTION_NAME" \
-    --public-ip-address "$BASTION_IP_NAME" \
     --vnet-name "$VNET_NAME" \
     --location "$LOCATION" \
-    --sku Standard \
-    --enable-tunneling true \
+    --sku Developer \
     --output none
 
 echo -e "${GREEN}✓ Azure Bastion created${NC}"
@@ -474,15 +473,10 @@ echo "   - Enter credentials:"
 echo "     Username: ${ADMIN_USERNAME}"
 echo "     Password: ${ADMIN_PASSWORD}"
 echo ""
-echo "2. Or connect using Azure CLI with Bastion tunnel:"
-echo "   az network bastion tunnel \\"
-echo "     --name $BASTION_NAME \\"
-echo "     --resource-group $RESOURCE_GROUP \\"
-echo "     --target-resource-id \$(az vm show --resource-group $RESOURCE_GROUP --name $VM_NAME --query id -o tsv) \\"
-echo "     --resource-port 3389 \\"
-echo "     --port 3389"
+echo "NOTE: Azure Bastion tunneling is not available with Developer SKU."
+echo "      Use the Azure Portal for Bastion connection."
 echo ""
-echo "3. To use Entra ID authentication:"
+echo "2. To use Entra ID authentication:"
 echo "   - Username: AzureAD\\your-email@domain.com"
 echo "   - Password: your Azure AD password"
 echo "   - Ensure you have 'Virtual Machine Administrator Login' or"
