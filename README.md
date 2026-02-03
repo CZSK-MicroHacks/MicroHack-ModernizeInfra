@@ -204,6 +204,15 @@ For the Migrate and Modernize hackathon, you can deploy a Windows Azure VM that 
 
 This simulated on-premises environment serves as the starting point for migration exercises.
 
+### Security Features
+
+The deployment includes production-grade security:
+- ✅ **No public IP on VM** - Access only via Azure Bastion
+- ✅ **Azure Bastion** - Secure RDP access
+- ✅ **Private endpoint for storage** - No public access
+- ✅ **Entra ID authentication** - Azure AD login enabled
+- ✅ **Managed identity** - No storage keys needed
+
 ### Quick Start for On-Premises Simulator
 
 ```bash
@@ -211,26 +220,33 @@ cd init-vm
 ./deploy-vm.sh
 ```
 
+**Note:** The script will automatically generate a random strong password for the local admin user. Make sure to save it!
+
 See the [init-vm/README.md](./init-vm/README.md) for complete documentation on:
-- Deploying the Azure VM
+- Deploying the Azure VM with security features
+- Connecting via Azure Bastion
+- Using Entra ID authentication
 - Installing SQL Server instances
 - Setting up linked servers
 - Deploying the application
-- Student access instructions
 
 ### What Gets Deployed
 
 The on-premises simulator creates:
-- Windows Server 2022 Azure VM
+- Windows Server 2022 Azure VM (no public IP)
+- Azure Bastion for secure access
+- Azure Storage Account with private endpoint
 - SQL Server 2022 with two instances (ports 1433 and 1434)
 - CustomerDB and OrderDB with sample data
 - Linked server configuration
 - ASP.NET Core application running on the VM
+- Azure AD Login extension for Entra ID authentication
 
 This environment allows students to:
-1. Explore a legacy on-premises setup
+1. Explore a legacy on-premises setup with modern security
 2. Plan migration strategies
 3. Practice migrating to Azure services (Azure SQL, App Service, etc.)
+4. Learn about secure Azure networking (Bastion, private endpoints)
 
 ## License
 

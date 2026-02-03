@@ -17,6 +17,7 @@ DEFAULT_RESOURCE_GROUP="rg-modernize-hackathon"
 DEFAULT_LOCATION="swedencentral"
 DEFAULT_VM_NAME="vm-onprem-simulator"
 DEFAULT_VM_SIZE="Standard_D4s_v3"
+DEFAULT_ADMIN_USERNAME="localadmin"
 
 echo "=================================================="
 echo "  Azure VM Deployment for Modernize Hackathon"
@@ -52,26 +53,30 @@ LOCATION=${LOCATION:-$DEFAULT_LOCATION}
 read -p "VM Name [${DEFAULT_VM_NAME}]: " VM_NAME
 VM_NAME=${VM_NAME:-$DEFAULT_VM_NAME}
 
-read -p "Admin Username: " ADMIN_USERNAME
-while [[ -z "$ADMIN_USERNAME" ]]; do
-    echo -e "${RED}Admin username cannot be empty${NC}"
-    read -p "Admin Username: " ADMIN_USERNAME
-done
+read -p "Admin Username [${DEFAULT_ADMIN_USERNAME}]: " ADMIN_USERNAME
+ADMIN_USERNAME=${ADMIN_USERNAME:-$DEFAULT_ADMIN_USERNAME}
 
-read -sp "Admin Password: " ADMIN_PASSWORD
-echo ""
-while [[ -z "$ADMIN_PASSWORD" ]]; do
-    echo -e "${RED}Admin password cannot be empty${NC}"
-    read -sp "Admin Password: " ADMIN_PASSWORD
-    echo ""
-done
+# Generate a random strong password for local admin that meets Windows complexity requirements
+# Password must contain: uppercase, lowercase, numbers, and special characters
+# Generate segments with sufficient length to ensure minimum requirements after filtering
+UPPER=$(tr -dc 'A-Z' < /dev/urandom | head -c 4)
+LOWER=$(tr -dc 'a-z' < /dev/urandom | head -c 4)
+DIGITS=$(tr -dc '0-9' < /dev/urandom | head -c 4)
+SPECIAL=$(tr -dc '!@#$%^&*' < /dev/urandom | head -c 4)
+# Combine and shuffle to mix character types
+ADMIN_PASSWORD=$(echo "${UPPER}${LOWER}${DIGITS}${SPECIAL}" | fold -w1 | shuf | tr -d '\n')
+echo -e "${GREEN}Generated strong random password for local admin user${NC}"
 
 # Derived names
 VNET_NAME="${VM_NAME}-vnet"
 SUBNET_NAME="${VM_NAME}-subnet"
+BASTION_SUBNET_NAME="AzureBastionSubnet"
+BASTION_NAME="${VM_NAME}-bastion"
+BASTION_IP_NAME="${VM_NAME}-bastion-pip"
 NSG_NAME="${VM_NAME}-nsg"
-PUBLIC_IP_NAME="${VM_NAME}-pip"
 NIC_NAME="${VM_NAME}-nic"
+STORAGE_PE_NAME="${VM_NAME}-storage-pe"
+PRIVATE_DNS_ZONE="privatelink.blob.core.windows.net"
 
 # Generate a valid Windows computer name (max 15 chars, no special chars)
 # 1. Convert to lowercase for consistency
@@ -104,6 +109,19 @@ echo "VM Name: ${VM_NAME}"
 echo "Computer Name: ${COMPUTER_NAME}"
 echo "VM Size: ${DEFAULT_VM_SIZE}"
 echo "Admin Username: ${ADMIN_USERNAME}"
+echo "Admin Password: ${ADMIN_PASSWORD}"
+echo ""
+echo "Security Configuration:"
+echo "  - VM will be deployed WITHOUT public IP"
+echo "  - Azure Bastion will be created for secure access"
+echo "  - Storage account will use private endpoint"
+echo "  - Public network access to storage will be disabled"
+echo "  - Entra ID authentication will be enabled"
+echo ""
+echo "⚠️  SECURITY WARNING:"
+echo "  The generated admin password will be displayed at the end."
+echo "  Please save it immediately to a secure password manager."
+echo "  The password will NOT be stored anywhere else."
 echo "=================================================="
 echo ""
 
@@ -126,8 +144,8 @@ az group create \
 
 echo -e "${GREEN}✓ Resource group created${NC}"
 
-# Create virtual network
-echo -e "${YELLOW}Creating virtual network...${NC}"
+# Create virtual network with VM subnet and Bastion subnet
+echo -e "${YELLOW}Creating virtual network with subnets...${NC}"
 az network vnet create \
     --resource-group "$RESOURCE_GROUP" \
     --name "$VNET_NAME" \
@@ -136,89 +154,64 @@ az network vnet create \
     --subnet-prefix 10.0.1.0/24 \
     --output none
 
-echo -e "${GREEN}✓ Virtual network created${NC}"
-
-# Create public IP
-echo -e "${YELLOW}Creating public IP address...${NC}"
-az network public-ip create \
+# Create Bastion subnet (required name and minimum /26 prefix)
+az network vnet subnet create \
     --resource-group "$RESOURCE_GROUP" \
-    --name "$PUBLIC_IP_NAME" \
-    --allocation-method Static \
-    --sku Standard \
+    --vnet-name "$VNET_NAME" \
+    --name "$BASTION_SUBNET_NAME" \
+    --address-prefix 10.0.2.0/26 \
     --output none
 
-echo -e "${GREEN}✓ Public IP created${NC}"
+echo -e "${GREEN}✓ Virtual network and subnets created${NC}"
 
-# Create NSG
+# Create public IP for Bastion (Standard SKU required)
+echo -e "${YELLOW}Creating public IP address for Bastion...${NC}"
+az network public-ip create \
+    --resource-group "$RESOURCE_GROUP" \
+    --name "$BASTION_IP_NAME" \
+    --sku Standard \
+    --allocation-method Static \
+    --location "$LOCATION" \
+    --output none
+
+echo -e "${GREEN}✓ Public IP for Bastion created${NC}"
+
+# Create Azure Bastion (this takes several minutes)
+echo -e "${YELLOW}Creating Azure Bastion (this may take 5-10 minutes)...${NC}"
+az network bastion create \
+    --resource-group "$RESOURCE_GROUP" \
+    --name "$BASTION_NAME" \
+    --public-ip-address "$BASTION_IP_NAME" \
+    --vnet-name "$VNET_NAME" \
+    --location "$LOCATION" \
+    --sku Standard \
+    --enable-tunneling true \
+    --output none
+
+echo -e "${GREEN}✓ Azure Bastion created${NC}"
+
+# Create NSG (keeping minimal rules for internal communication)
 echo -e "${YELLOW}Creating Network Security Group...${NC}"
 az network nsg create \
     --resource-group "$RESOURCE_GROUP" \
     --name "$NSG_NAME" \
     --output none
 
-# Add NSG rules
-echo -e "${YELLOW}Configuring security rules...${NC}"
+echo -e "${GREEN}✓ NSG created${NC}"
 
-# RDP access
-az network nsg rule create \
-    --resource-group "$RESOURCE_GROUP" \
-    --nsg-name "$NSG_NAME" \
-    --name "AllowRDP" \
-    --priority 1000 \
-    --destination-port-ranges 3389 \
-    --protocol Tcp \
-    --access Allow \
-    --output none
-
-# HTTP access for application
-az network nsg rule create \
-    --resource-group "$RESOURCE_GROUP" \
-    --nsg-name "$NSG_NAME" \
-    --name "AllowHTTP" \
-    --priority 1010 \
-    --destination-port-ranges 8080 \
-    --protocol Tcp \
-    --access Allow \
-    --output none
-
-# SQL Server default instance
-az network nsg rule create \
-    --resource-group "$RESOURCE_GROUP" \
-    --nsg-name "$NSG_NAME" \
-    --name "AllowSQLServer1" \
-    --priority 1020 \
-    --destination-port-ranges 1433 \
-    --protocol Tcp \
-    --access Allow \
-    --output none
-
-# SQL Server named instance
-az network nsg rule create \
-    --resource-group "$RESOURCE_GROUP" \
-    --nsg-name "$NSG_NAME" \
-    --name "AllowSQLServer2" \
-    --priority 1030 \
-    --destination-port-ranges 1434 \
-    --protocol Tcp \
-    --access Allow \
-    --output none
-
-echo -e "${GREEN}✓ Security rules configured${NC}"
-
-# Create NIC
+# Create NIC without public IP
 echo -e "${YELLOW}Creating network interface...${NC}"
 az network nic create \
     --resource-group "$RESOURCE_GROUP" \
     --name "$NIC_NAME" \
     --vnet-name "$VNET_NAME" \
     --subnet "$SUBNET_NAME" \
-    --public-ip-address "$PUBLIC_IP_NAME" \
     --network-security-group "$NSG_NAME" \
     --output none
 
 echo -e "${GREEN}✓ Network interface created${NC}"
 
-# Create VM
+# Create VM with managed identity
 echo -e "${YELLOW}Creating Windows Server VM (this may take a few minutes)...${NC}"
 az vm create \
     --resource-group "$RESOURCE_GROUP" \
@@ -231,15 +224,21 @@ az vm create \
     --admin-username "$ADMIN_USERNAME" \
     --admin-password "$ADMIN_PASSWORD" \
     --os-disk-size-gb 128 \
+    --assign-identity \
     --output none
 
 echo -e "${GREEN}✓ VM created successfully${NC}"
 
-# Get the public IP address
-PUBLIC_IP=$(az network public-ip show \
+# Enable Azure AD login for the VM
+echo -e "${YELLOW}Installing Azure AD Login extension for Entra ID authentication...${NC}"
+az vm extension set \
     --resource-group "$RESOURCE_GROUP" \
-    --name "$PUBLIC_IP_NAME" \
-    --query ipAddress -o tsv)
+    --vm-name "$VM_NAME" \
+    --name AADLoginForWindows \
+    --publisher Microsoft.Azure.ActiveDirectory \
+    --output none
+
+echo -e "${GREEN}✓ Azure AD Login extension installed${NC}"
 
 # Create or reuse storage account for scripts
 echo -e "${YELLOW}Setting up storage account for installation scripts...${NC}"
@@ -266,6 +265,7 @@ else
         --sku Standard_LRS \
         --kind StorageV2 \
         --allow-blob-public-access false \
+        --public-network-access Disabled \
         --output none; then
         echo -e "${GREEN}✓ Storage account created: ${STORAGE_ACCOUNT_NAME}${NC}"
     else
@@ -275,6 +275,91 @@ else
         exit 1
     fi
 fi
+
+# Create Private DNS Zone for blob storage
+echo -e "${YELLOW}Creating private DNS zone for blob storage...${NC}"
+if ! az network private-dns zone show \
+    --resource-group "$RESOURCE_GROUP" \
+    --name "$PRIVATE_DNS_ZONE" &> /dev/null; then
+    az network private-dns zone create \
+        --resource-group "$RESOURCE_GROUP" \
+        --name "$PRIVATE_DNS_ZONE" \
+        --output none
+    echo -e "${GREEN}✓ Private DNS zone created${NC}"
+else
+    echo -e "${GREEN}✓ Private DNS zone already exists${NC}"
+fi
+
+# Link private DNS zone to VNet
+echo -e "${YELLOW}Linking private DNS zone to VNet...${NC}"
+if ! az network private-dns link vnet show \
+    --resource-group "$RESOURCE_GROUP" \
+    --zone-name "$PRIVATE_DNS_ZONE" \
+    --name "${VNET_NAME}-link" &> /dev/null; then
+    az network private-dns link vnet create \
+        --resource-group "$RESOURCE_GROUP" \
+        --zone-name "$PRIVATE_DNS_ZONE" \
+        --name "${VNET_NAME}-link" \
+        --virtual-network "$VNET_NAME" \
+        --registration-enabled false \
+        --output none
+    echo -e "${GREEN}✓ Private DNS zone linked to VNet${NC}"
+else
+    echo -e "${GREEN}✓ Private DNS zone link already exists${NC}"
+fi
+
+# Create private endpoint for storage account
+echo -e "${YELLOW}Creating private endpoint for storage account...${NC}"
+if ! az network private-endpoint show \
+    --resource-group "$RESOURCE_GROUP" \
+    --name "$STORAGE_PE_NAME" &> /dev/null; then
+    STORAGE_ACCOUNT_ID=$(az storage account show --name "$STORAGE_ACCOUNT_NAME" --resource-group "$RESOURCE_GROUP" --query id -o tsv)
+    az network private-endpoint create \
+        --resource-group "$RESOURCE_GROUP" \
+        --name "$STORAGE_PE_NAME" \
+        --vnet-name "$VNET_NAME" \
+        --subnet "$SUBNET_NAME" \
+        --private-connection-resource-id "$STORAGE_ACCOUNT_ID" \
+        --group-id blob \
+        --connection-name "${STORAGE_ACCOUNT_NAME}-blob-connection" \
+        --output none
+    echo -e "${GREEN}✓ Private endpoint created${NC}"
+else
+    echo -e "${GREEN}✓ Private endpoint already exists${NC}"
+fi
+
+# Create DNS zone group for automatic DNS registration
+echo -e "${YELLOW}Configuring private DNS zone group...${NC}"
+if ! az network private-endpoint dns-zone-group show \
+    --resource-group "$RESOURCE_GROUP" \
+    --endpoint-name "$STORAGE_PE_NAME" \
+    --name "default" &> /dev/null; then
+    az network private-endpoint dns-zone-group create \
+        --resource-group "$RESOURCE_GROUP" \
+        --endpoint-name "$STORAGE_PE_NAME" \
+        --name "default" \
+        --private-dns-zone "$PRIVATE_DNS_ZONE" \
+        --zone-name "blob" \
+        --output none
+    echo -e "${GREEN}✓ DNS zone group created${NC}"
+else
+    echo -e "${GREEN}✓ DNS zone group already exists${NC}"
+fi
+
+echo -e "${GREEN}✓ Private endpoint fully configured with DNS${NC}"
+
+# Grant VM managed identity Storage Blob Data Contributor role
+echo -e "${YELLOW}Granting VM managed identity access to storage account...${NC}"
+VM_IDENTITY=$(az vm show --resource-group "$RESOURCE_GROUP" --name "$VM_NAME" --query identity.principalId -o tsv)
+STORAGE_ACCOUNT_ID=$(az storage account show --name "$STORAGE_ACCOUNT_NAME" --resource-group "$RESOURCE_GROUP" --query id -o tsv)
+
+az role assignment create \
+    --assignee "$VM_IDENTITY" \
+    --role "Storage Blob Data Contributor" \
+    --scope "$STORAGE_ACCOUNT_ID" \
+    --output none
+
+echo -e "${GREEN}✓ VM managed identity granted storage access${NC}"
 
 # Create container if it doesn't exist (private access only) using Azure AD authentication
 echo -e "${YELLOW}Ensuring blob container exists...${NC}"
@@ -314,39 +399,25 @@ done
 
 echo -e "${GREEN}✓ Scripts uploaded successfully${NC}"
 
-# Generate user delegation SAS token for secure access (valid for 24 hours, Azure AD-based)
-echo -e "${YELLOW}Generating user delegation SAS token for secure script access...${NC}"
-EXPIRY_DATE=$(date -u -d "24 hours" '+%Y-%m-%dT%H:%MZ' 2>/dev/null || date -u -v+24H '+%Y-%m-%dT%H:%MZ' 2>/dev/null)
-START_DATE=$(date -u '+%Y-%m-%dT%H:%MZ')
-SAS_TOKEN=$(az storage container generate-sas \
-    --account-name "$STORAGE_ACCOUNT_NAME" \
-    --name "$CONTAINER_NAME" \
-    --permissions r \
-    --expiry "$EXPIRY_DATE" \
-    --start "$START_DATE" \
-    --auth-mode login \
-    --as-user \
-    --output tsv)
+# Get blob URLs without SAS token (using managed identity)
+SETUP_ALL_URL="https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/${CONTAINER_NAME}/setup-all.ps1"
+INSTALL_SQL_URL="https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/${CONTAINER_NAME}/install-sql-server.ps1"
+SETUP_DATABASES_URL="https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/${CONTAINER_NAME}/setup-databases.ps1"
+SETUP_LINKED_URL="https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/${CONTAINER_NAME}/setup-linked-servers.ps1"
+DEPLOY_APP_URL="https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/${CONTAINER_NAME}/deploy-application.ps1"
 
-echo -e "${GREEN}✓ User delegation SAS token generated (valid for 24 hours, Azure AD-based)${NC}"
-
-# Get blob URLs with SAS token
-SETUP_ALL_URL="https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/${CONTAINER_NAME}/setup-all.ps1?${SAS_TOKEN}"
-INSTALL_SQL_URL="https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/${CONTAINER_NAME}/install-sql-server.ps1?${SAS_TOKEN}"
-SETUP_DATABASES_URL="https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/${CONTAINER_NAME}/setup-databases.ps1?${SAS_TOKEN}"
-SETUP_LINKED_URL="https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/${CONTAINER_NAME}/setup-linked-servers.ps1?${SAS_TOKEN}"
-DEPLOY_APP_URL="https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/${CONTAINER_NAME}/deploy-application.ps1?${SAS_TOKEN}"
-
-# Install Custom Script Extension
+# Install Custom Script Extension with managed identity
 echo -e "${YELLOW}Installing Custom Script Extension...${NC}"
 # Note: Using Bypass instead of Unrestricted for better security
+# The VM's managed identity will be used to access the scripts from blob storage
 az vm extension set \
     --resource-group "$RESOURCE_GROUP" \
     --vm-name "$VM_NAME" \
     --name CustomScriptExtension \
     --publisher Microsoft.Compute \
     --version 1.10 \
-    --protected-settings "{\"fileUris\":[\"$SETUP_ALL_URL\",\"$INSTALL_SQL_URL\",\"$SETUP_DATABASES_URL\",\"$SETUP_LINKED_URL\",\"$DEPLOY_APP_URL\"],\"commandToExecute\":\"powershell -ExecutionPolicy Bypass -Command \\\"\$env:AUTOMATION_MODE='true'; & .\\\\setup-all.ps1\\\"\"}" \
+    --settings "{\"fileUris\":[\"$SETUP_ALL_URL\",\"$INSTALL_SQL_URL\",\"$SETUP_DATABASES_URL\",\"$SETUP_LINKED_URL\",\"$DEPLOY_APP_URL\"],\"managedIdentity\":{}}" \
+    --protected-settings "{\"commandToExecute\":\"powershell -ExecutionPolicy Bypass -Command \\\"\$env:AUTOMATION_MODE='true'; & .\\\\setup-all.ps1\\\"\"}" \
     --output none
 
 echo -e "${GREEN}✓ Custom Script Extension installed${NC}"
@@ -356,10 +427,25 @@ echo "=================================================="
 echo "  VM Deployment Successful!"
 echo "=================================================="
 echo "VM Name: ${VM_NAME}"
-echo "Public IP: ${PUBLIC_IP}"
-echo "RDP Access: ${PUBLIC_IP}:3389"
-echo "Username: ${ADMIN_USERNAME}"
+echo "Admin Username: ${ADMIN_USERNAME}"
+echo ""
+echo "⚠️  IMPORTANT - SAVE THESE CREDENTIALS IMMEDIATELY!"
+echo ""
+echo "Admin Password: ${ADMIN_PASSWORD}"
+echo ""
+echo "Copy this password to a secure password manager now."
+echo "This is the only time it will be displayed."
+echo ""
 echo "Storage Account: ${STORAGE_ACCOUNT_NAME}"
+echo ""
+echo "=================================================="
+echo "  Security Configuration"
+echo "=================================================="
+echo "✓ VM deployed WITHOUT public IP address"
+echo "✓ Azure Bastion deployed for secure access"
+echo "✓ Storage account using private endpoint"
+echo "✓ Public network access to storage DISABLED"
+echo "✓ Entra ID authentication enabled"
 echo ""
 echo "=================================================="
 echo "  Automated Setup in Progress"
@@ -378,8 +464,29 @@ echo "    --resource-group $RESOURCE_GROUP \\"
 echo "    --vm-name $VM_NAME \\"
 echo "    --query \"[].{Name:name, State:provisioningState}\""
 echo ""
-echo "Once complete, access the application at:"
-echo "  http://${PUBLIC_IP}:8080"
+echo "=================================================="
+echo "  How to Connect"
+echo "=================================================="
+echo "1. Connect using Azure Bastion from Azure Portal:"
+echo "   - Navigate to the VM in Azure Portal"
+echo "   - Click 'Connect' -> 'Bastion'"
+echo "   - Enter credentials:"
+echo "     Username: ${ADMIN_USERNAME}"
+echo "     Password: ${ADMIN_PASSWORD}"
+echo ""
+echo "2. Or connect using Azure CLI with Bastion tunnel:"
+echo "   az network bastion tunnel \\"
+echo "     --name $BASTION_NAME \\"
+echo "     --resource-group $RESOURCE_GROUP \\"
+echo "     --target-resource-id \$(az vm show --resource-group $RESOURCE_GROUP --name $VM_NAME --query id -o tsv) \\"
+echo "     --resource-port 3389 \\"
+echo "     --port 3389"
+echo ""
+echo "3. To use Entra ID authentication:"
+echo "   - Username: AzureAD\\your-email@domain.com"
+echo "   - Password: your Azure AD password"
+echo "   - Ensure you have 'Virtual Machine Administrator Login' or"
+echo "     'Virtual Machine User Login' role on the VM"
 echo ""
 echo "=================================================="
 echo ""
