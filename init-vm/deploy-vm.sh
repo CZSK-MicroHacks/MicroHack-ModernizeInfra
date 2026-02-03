@@ -58,10 +58,13 @@ ADMIN_USERNAME=${ADMIN_USERNAME:-$DEFAULT_ADMIN_USERNAME}
 
 # Generate a random strong password for local admin that meets Windows complexity requirements
 # Password must contain: uppercase, lowercase, numbers, and special characters
-# Generate 3 segments and combine: uppercase+lowercase (8 chars), numbers (4 chars), special chars (4 chars)
-ADMIN_PASSWORD="$(openssl rand -base64 6 | tr -dc 'A-Za-z' | cut -c1-8)$(openssl rand -base64 4 | tr -dc '0-9' | cut -c1-4)$(openssl rand -base64 4 | tr -dc '!@#$%^&*' | cut -c1-4)"
-# Shuffle the password to mix character types
-ADMIN_PASSWORD=$(echo "$ADMIN_PASSWORD" | fold -w1 | shuf | tr -d '\n')
+# Generate segments with sufficient length to ensure minimum requirements after filtering
+UPPER=$(tr -dc 'A-Z' < /dev/urandom | head -c 4)
+LOWER=$(tr -dc 'a-z' < /dev/urandom | head -c 4)
+DIGITS=$(tr -dc '0-9' < /dev/urandom | head -c 4)
+SPECIAL=$(tr -dc '!@#$%^&*' < /dev/urandom | head -c 4)
+# Combine and shuffle to mix character types
+ADMIN_PASSWORD=$(echo "${UPPER}${LOWER}${DIGITS}${SPECIAL}" | fold -w1 | shuf | tr -d '\n')
 echo -e "${GREEN}Generated strong random password for local admin user${NC}"
 
 # Derived names
@@ -114,6 +117,11 @@ echo "  - Azure Bastion will be created for secure access"
 echo "  - Storage account will use private endpoint"
 echo "  - Public network access to storage will be disabled"
 echo "  - Entra ID authentication will be enabled"
+echo ""
+echo "⚠️  SECURITY WARNING:"
+echo "  The generated admin password will be displayed at the end."
+echo "  Please save it immediately to a secure password manager."
+echo "  The password will NOT be stored anywhere else."
 echo "=================================================="
 echo ""
 
@@ -420,10 +428,15 @@ echo "  VM Deployment Successful!"
 echo "=================================================="
 echo "VM Name: ${VM_NAME}"
 echo "Admin Username: ${ADMIN_USERNAME}"
-echo "Admin Password: ${ADMIN_PASSWORD}"
-echo "Storage Account: ${STORAGE_ACCOUNT_NAME}"
 echo ""
-echo "IMPORTANT: Save these credentials securely!"
+echo "⚠️  IMPORTANT - SAVE THESE CREDENTIALS IMMEDIATELY!"
+echo ""
+echo "Admin Password: ${ADMIN_PASSWORD}"
+echo ""
+echo "Copy this password to a secure password manager now."
+echo "This is the only time it will be displayed."
+echo ""
+echo "Storage Account: ${STORAGE_ACCOUNT_NAME}"
 echo ""
 echo "=================================================="
 echo "  Security Configuration"
