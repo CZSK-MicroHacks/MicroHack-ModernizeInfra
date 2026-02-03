@@ -75,8 +75,6 @@ BASTION_NAME="${VM_NAME}-bastion"
 # BASTION_IP_NAME="${VM_NAME}-bastion-pip"  # Not needed for Developer SKU
 NSG_NAME="${VM_NAME}-nsg"
 NIC_NAME="${VM_NAME}-nic"
-STORAGE_PE_NAME="${VM_NAME}-storage-pe"
-PRIVATE_DNS_ZONE="privatelink.blob.core.windows.net"
 
 # Generate a valid Windows computer name (max 15 chars, no special chars)
 # 1. Convert to lowercase for consistency
@@ -114,8 +112,7 @@ echo ""
 echo "Security Configuration:"
 echo "  - VM will be deployed WITHOUT public IP"
 echo "  - Azure Bastion will be created for secure access"
-echo "  - Storage account will use private endpoint"
-echo "  - Public network access to storage will be disabled"
+echo "  - Setup scripts will be downloaded from GitHub"
 echo "  - Entra ID authentication will be enabled"
 echo ""
 echo "⚠️  SECURITY WARNING:"
@@ -239,183 +236,28 @@ az vm extension set \
 
 echo -e "${GREEN}✓ Azure AD Login extension installed${NC}"
 
-# Create or reuse storage account for scripts
-echo -e "${YELLOW}Setting up storage account for installation scripts...${NC}"
-# Generate a valid storage account name (3-24 chars, lowercase letters and numbers only)
-# Format: st + sanitized resource group name (deterministic, no random suffix)
-RG_SANITIZED=$(echo "$RESOURCE_GROUP" | tr -cd '[:alnum:]' | tr '[:upper:]' '[:lower:]')
-STORAGE_ACCOUNT_NAME="st${RG_SANITIZED}"
-# Ensure name is at least 3 characters and at most 24 characters
-STORAGE_ACCOUNT_NAME="${STORAGE_ACCOUNT_NAME:0:24}"
-if [ ${#STORAGE_ACCOUNT_NAME} -lt 3 ]; then
-    STORAGE_ACCOUNT_NAME="stmodernizedefault"
-fi
-CONTAINER_NAME="scripts"
+# Construct GitHub raw URLs for scripts
+# Use main branch as the default, or override with GITHUB_BRANCH environment variable
+# This allows testing changes in feature branches before merging to main
+GITHUB_BRANCH="${GITHUB_BRANCH:-main}"
+GITHUB_BASE_URL="https://raw.githubusercontent.com/CZSK-MicroHacks/MicroHack-ModernizeInfra/${GITHUB_BRANCH}/init-vm/scripts"
+SETUP_ALL_URL="${GITHUB_BASE_URL}/setup-all.ps1"
+INSTALL_SQL_URL="${GITHUB_BASE_URL}/install-sql-server.ps1"
+SETUP_DATABASES_URL="${GITHUB_BASE_URL}/setup-databases.ps1"
+SETUP_LINKED_URL="${GITHUB_BASE_URL}/setup-linked-servers.ps1"
+DEPLOY_APP_URL="${GITHUB_BASE_URL}/deploy-application.ps1"
 
-# Check if storage account already exists in the resource group
-if az storage account show --name "$STORAGE_ACCOUNT_NAME" --resource-group "$RESOURCE_GROUP" &> /dev/null; then
-    echo -e "${GREEN}✓ Storage account already exists, reusing: ${STORAGE_ACCOUNT_NAME}${NC}"
-else
-    echo -e "${YELLOW}Creating new storage account...${NC}"
-    if az storage account create \
-        --name "$STORAGE_ACCOUNT_NAME" \
-        --resource-group "$RESOURCE_GROUP" \
-        --location "$LOCATION" \
-        --sku Standard_LRS \
-        --kind StorageV2 \
-        --allow-blob-public-access false \
-        --public-network-access Disabled \
-        --output none; then
-        echo -e "${GREEN}✓ Storage account created: ${STORAGE_ACCOUNT_NAME}${NC}"
-    else
-        echo -e "${RED}Error: Failed to create storage account${NC}"
-        echo "The storage account name '${STORAGE_ACCOUNT_NAME}' may be taken globally across Azure."
-        echo "Consider using a more unique resource group name to generate a different storage account name."
-        exit 1
-    fi
-fi
-
-# Create Private DNS Zone for blob storage
-echo -e "${YELLOW}Creating private DNS zone for blob storage...${NC}"
-if ! az network private-dns zone show \
-    --resource-group "$RESOURCE_GROUP" \
-    --name "$PRIVATE_DNS_ZONE" &> /dev/null; then
-    az network private-dns zone create \
-        --resource-group "$RESOURCE_GROUP" \
-        --name "$PRIVATE_DNS_ZONE" \
-        --output none
-    echo -e "${GREEN}✓ Private DNS zone created${NC}"
-else
-    echo -e "${GREEN}✓ Private DNS zone already exists${NC}"
-fi
-
-# Link private DNS zone to VNet
-echo -e "${YELLOW}Linking private DNS zone to VNet...${NC}"
-if ! az network private-dns link vnet show \
-    --resource-group "$RESOURCE_GROUP" \
-    --zone-name "$PRIVATE_DNS_ZONE" \
-    --name "${VNET_NAME}-link" &> /dev/null; then
-    az network private-dns link vnet create \
-        --resource-group "$RESOURCE_GROUP" \
-        --zone-name "$PRIVATE_DNS_ZONE" \
-        --name "${VNET_NAME}-link" \
-        --virtual-network "$VNET_NAME" \
-        --registration-enabled false \
-        --output none
-    echo -e "${GREEN}✓ Private DNS zone linked to VNet${NC}"
-else
-    echo -e "${GREEN}✓ Private DNS zone link already exists${NC}"
-fi
-
-# Create private endpoint for storage account
-echo -e "${YELLOW}Creating private endpoint for storage account...${NC}"
-if ! az network private-endpoint show \
-    --resource-group "$RESOURCE_GROUP" \
-    --name "$STORAGE_PE_NAME" &> /dev/null; then
-    STORAGE_ACCOUNT_ID=$(az storage account show --name "$STORAGE_ACCOUNT_NAME" --resource-group "$RESOURCE_GROUP" --query id -o tsv)
-    az network private-endpoint create \
-        --resource-group "$RESOURCE_GROUP" \
-        --name "$STORAGE_PE_NAME" \
-        --vnet-name "$VNET_NAME" \
-        --subnet "$SUBNET_NAME" \
-        --private-connection-resource-id "$STORAGE_ACCOUNT_ID" \
-        --group-id blob \
-        --connection-name "${STORAGE_ACCOUNT_NAME}-blob-connection" \
-        --output none
-    echo -e "${GREEN}✓ Private endpoint created${NC}"
-else
-    echo -e "${GREEN}✓ Private endpoint already exists${NC}"
-fi
-
-# Create DNS zone group for automatic DNS registration
-echo -e "${YELLOW}Configuring private DNS zone group...${NC}"
-if ! az network private-endpoint dns-zone-group show \
-    --resource-group "$RESOURCE_GROUP" \
-    --endpoint-name "$STORAGE_PE_NAME" \
-    --name "default" &> /dev/null; then
-    az network private-endpoint dns-zone-group create \
-        --resource-group "$RESOURCE_GROUP" \
-        --endpoint-name "$STORAGE_PE_NAME" \
-        --name "default" \
-        --private-dns-zone "$PRIVATE_DNS_ZONE" \
-        --zone-name "blob" \
-        --output none
-    echo -e "${GREEN}✓ DNS zone group created${NC}"
-else
-    echo -e "${GREEN}✓ DNS zone group already exists${NC}"
-fi
-
-echo -e "${GREEN}✓ Private endpoint fully configured with DNS${NC}"
-
-# Grant VM managed identity Storage Blob Data Contributor role
-echo -e "${YELLOW}Granting VM managed identity access to storage account...${NC}"
-VM_IDENTITY=$(az vm show --resource-group "$RESOURCE_GROUP" --name "$VM_NAME" --query identity.principalId -o tsv)
-STORAGE_ACCOUNT_ID=$(az storage account show --name "$STORAGE_ACCOUNT_NAME" --resource-group "$RESOURCE_GROUP" --query id -o tsv)
-
-az role assignment create \
-    --assignee "$VM_IDENTITY" \
-    --role "Storage Blob Data Contributor" \
-    --scope "$STORAGE_ACCOUNT_ID" \
-    --output none
-
-echo -e "${GREEN}✓ VM managed identity granted storage access${NC}"
-
-# Create container if it doesn't exist (private access only) using Azure AD authentication
-echo -e "${YELLOW}Ensuring blob container exists...${NC}"
-if ! az storage container show \
-    --name "$CONTAINER_NAME" \
-    --account-name "$STORAGE_ACCOUNT_NAME" \
-    --auth-mode login &> /dev/null; then
-    az storage container create \
-        --name "$CONTAINER_NAME" \
-        --account-name "$STORAGE_ACCOUNT_NAME" \
-        --auth-mode login \
-        --public-access off \
-        --output none
-    echo -e "${GREEN}✓ Container created${NC}"
-else
-    echo -e "${GREEN}✓ Container already exists${NC}"
-fi
-
-# Upload scripts to blob storage
-echo -e "${YELLOW}Uploading installation scripts to blob storage...${NC}"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/scripts"
-
-for script_file in "$SCRIPT_DIR"/*.ps1; do
-    if [ -f "$script_file" ]; then
-        filename=$(basename "$script_file")
-        echo "  Uploading $filename..."
-        az storage blob upload \
-            --account-name "$STORAGE_ACCOUNT_NAME" \
-            --auth-mode login \
-            --container-name "$CONTAINER_NAME" \
-            --name "$filename" \
-            --file "$script_file" \
-            --overwrite \
-            --output none
-    fi
-done
-
-echo -e "${GREEN}✓ Scripts uploaded successfully${NC}"
-
-# Get blob URLs without SAS token (using managed identity)
-SETUP_ALL_URL="https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/${CONTAINER_NAME}/setup-all.ps1"
-INSTALL_SQL_URL="https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/${CONTAINER_NAME}/install-sql-server.ps1"
-SETUP_DATABASES_URL="https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/${CONTAINER_NAME}/setup-databases.ps1"
-SETUP_LINKED_URL="https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/${CONTAINER_NAME}/setup-linked-servers.ps1"
-DEPLOY_APP_URL="https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/${CONTAINER_NAME}/deploy-application.ps1"
-
-# Install Custom Script Extension with managed identity
+# Install Custom Script Extension with public GitHub URLs
 echo -e "${YELLOW}Installing Custom Script Extension...${NC}"
 # Note: Using Bypass instead of Unrestricted for better security
-# The VM's managed identity will be used to access the scripts from blob storage
+# The scripts will be downloaded from public GitHub repository
 az vm extension set \
     --resource-group "$RESOURCE_GROUP" \
     --vm-name "$VM_NAME" \
     --name CustomScriptExtension \
     --publisher Microsoft.Compute \
     --version 1.10 \
-    --settings "{\"fileUris\":[\"$SETUP_ALL_URL\",\"$INSTALL_SQL_URL\",\"$SETUP_DATABASES_URL\",\"$SETUP_LINKED_URL\",\"$DEPLOY_APP_URL\"],\"managedIdentity\":{}}" \
+    --settings "{\"fileUris\":[\"$SETUP_ALL_URL\",\"$INSTALL_SQL_URL\",\"$SETUP_DATABASES_URL\",\"$SETUP_LINKED_URL\",\"$DEPLOY_APP_URL\"]}" \
     --protected-settings "{\"commandToExecute\":\"powershell -ExecutionPolicy Bypass -Command \\\"\$env:AUTOMATION_MODE='true'; & .\\\\setup-all.ps1\\\"\"}" \
     --output none
 
@@ -435,15 +277,11 @@ echo ""
 echo "Copy this password to a secure password manager now."
 echo "This is the only time it will be displayed."
 echo ""
-echo "Storage Account: ${STORAGE_ACCOUNT_NAME}"
-echo ""
 echo "=================================================="
 echo "  Security Configuration"
 echo "=================================================="
 echo "✓ VM deployed WITHOUT public IP address"
 echo "✓ Azure Bastion deployed for secure access"
-echo "✓ Storage account using private endpoint"
-echo "✓ Public network access to storage DISABLED"
 echo "✓ Entra ID authentication enabled"
 echo ""
 echo "=================================================="

@@ -7,20 +7,17 @@ This directory contains Azure CLI scripts and PowerShell configurations to deplo
 The init-vm setup creates:
 - **Windows Server 2022 Azure VM** - Simulates on-premises infrastructure (NO public IP)
 - **Azure Bastion** - Secure RDP access without public IP
-- **Azure Storage Account** - Hosts installation scripts with private endpoint and managed identity
 - **SQL Server 2022 with 2 Instances** - CustomerDB and OrderDB instances with linked server configuration
 - **ASP.NET Core Application** - The legacy application running on the VM
-- **Custom Script Extension** - Automated installation and configuration
+- **Custom Script Extension** - Automated installation and configuration using scripts from GitHub
 - **Entra ID Authentication** - Azure AD login enabled for VM access
 
 ## Security Features
 
 ✅ **VM has NO public IP address** - All access through Azure Bastion
-✅ **Storage account uses private endpoint** - Connected to VM's VNet
-✅ **Public network access to storage DISABLED** - Enhanced security
-✅ **Managed identity authentication** - No SAS tokens or storage keys
 ✅ **Entra ID authentication enabled** - Use Azure AD credentials for VM access
 ✅ **Random generated password** - Strong password for local admin account
+✅ **Scripts from version-controlled source** - Setup scripts are downloaded from the public GitHub repository, ensuring version control, transparency, and with no embedded secrets in scripts
 
 ## Architecture
 
@@ -63,23 +60,16 @@ The init-vm setup creates:
 │  │   │  │     OrderDB     │                   │    │    │
 │  │   │  └─────────────────┘                   │    │    │
 │  │   └─────────────────────────────────────────┘    │    │
-│  │                        │                          │    │
-│  │   ┌────────────────────▼────────────────────┐    │    │
-│  │   │  Private Endpoint for Storage Account   │    │    │
-│  │   │  privatelink.blob.core.windows.net      │    │    │
-│  │   └─────────────────────────────────────────┘    │    │
 │  └───────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────┘
                          │
-                         │ Private Link
+                         │ Public Internet
                          ▼
             ┌────────────────────────────┐
-            │  Azure Storage Account     │
-            │  (Public Access: DISABLED) │
-            │  - Private Endpoint Only   │
-            │  - Managed Identity Auth   │
+            │  GitHub Repository         │
+            │  (Raw Content)             │
             │                            │
-            │  Blob Container: scripts   │
+            │  Setup Scripts:            │
             │  - setup-all.ps1          │
             │  - install-sql-server.ps1 │
             │  - setup-databases.ps1    │
@@ -101,17 +91,12 @@ Before running the deployment scripts, ensure you have:
 2. **Active Azure Subscription** with appropriate permissions to create:
    - Virtual Machines
    - Network Security Groups
-   - Public IP addresses
    - Virtual Networks
-   - Storage Accounts
+   - Azure Bastion
 
-3. **Azure RBAC Roles** for Azure AD authentication:
-   - **Storage Blob Data Contributor** role on the storage account (or subscription) for uploading blobs
-   - The script uses Azure AD authentication instead of storage account keys for enhanced security
+3. **Resource Group** (will be created if it doesn't exist)
 
-4. **Resource Group** (will be created if it doesn't exist)
-
-5. **SSH Key or Password** for VM access (script will prompt)
+4. **SSH Key or Password** for VM access (script will prompt)
 
 ## Quick Start
 
@@ -128,12 +113,8 @@ This script will:
 - Deploy a Windows Server 2022 VM **WITHOUT public IP**
 - Create **Azure Bastion** for secure access
 - Configure network security (VNet with VM subnet and Bastion subnet)
-- Create an Azure Storage Account with **private endpoint** and **public access disabled**
-- Upload PowerShell scripts to Blob Storage using Azure AD authentication
-- Configure private DNS zone for private endpoint
-- Grant VM's managed identity access to storage account
 - Install Azure AD Login extension for Entra ID authentication
-- Install Custom Script Extension to automatically run setup scripts
+- Install Custom Script Extension to automatically run setup scripts from GitHub
 
 **Parameters you'll be prompted for:**
 - Resource Group Name (default: rg-modernize-hackathon)
@@ -148,7 +129,7 @@ This script will:
 **No manual connection required!** The VM automatically configures itself using the Custom Script Extension.
 
 The VM will automatically:
-1. Download installation scripts from Azure Blob Storage via private endpoint
+1. Download installation scripts from GitHub
 2. Install SQL Server 2022 Developer Edition
 3. Configure two SQL Server instances (ports 1433 and 1434)
 4. Create CustomerDB and OrderDB databases with sample data
@@ -230,12 +211,8 @@ Main deployment script using Azure CLI to:
 - Deploy Windows Server 2022 VM **without public IP**
 - Create **Azure Bastion** for secure access
 - Configure VNet with VM subnet and Bastion subnet
-- Create Azure Storage Account with **private endpoint** and **public access disabled**
-- Upload PowerShell scripts to Blob Storage using Azure AD authentication
-- Configure private DNS zone for private link
-- Grant VM's managed identity access to storage account
 - Install **Azure AD Login extension** for Entra ID authentication
-- Install Custom Script Extension with managed identity to automatically execute setup scripts
+- Install Custom Script Extension to automatically execute setup scripts from GitHub
 
 ### 2. `scripts/install-sql-server.ps1`
 PowerShell script (downloaded and executed automatically via VM extension) to:
@@ -367,11 +344,9 @@ az group delete --name rg-modernize-hackathon --yes --no-wait
 
 1. **No Public IP on VM** - VM is not directly accessible from the internet
 2. **Azure Bastion** - Secure RDP access without exposing RDP port to the internet
-3. **Private Endpoint for Storage** - Storage account only accessible within VNet
-4. **Public Network Access Disabled** - Storage account cannot be accessed from public internet
-5. **Managed Identity Authentication** - No storage keys or SAS tokens needed
-6. **Entra ID Authentication** - Azure AD login enabled for VM access
-7. **Random Generated Passwords** - Strong passwords automatically generated
+3. **Entra ID Authentication** - Azure AD login enabled for VM access
+4. **Random Generated Passwords** - Strong passwords automatically generated
+5. **Version-Controlled Scripts** - Setup scripts from public GitHub ensure transparency and auditability
 
 ⚠️ **Additional Notes:**
 
@@ -379,6 +354,7 @@ az group delete --name rg-modernize-hackathon --yes --no-wait
 2. **SQL Server Developer Edition** - Licensed for dev/test only
 3. **No SSL/TLS** - Application uses HTTP (not HTTPS)
 4. **SQL Server uses default passwords** - Change for any non-hackathon use
+5. **Scripts from public repository** - For production, consider using private repositories, signed releases, or script integrity validation (e.g., SHA256 checksums) to mitigate supply chain risks
 
 **Additional recommendations for production:**
 - Use Azure Key Vault for all secrets
@@ -394,11 +370,9 @@ Approximate Azure costs (Sweden Central region):
 - **VM (Standard_D4s_v3)**: ~$0.192/hour (~$140/month)
 - **Managed Disk (128 GB Premium)**: ~$25/month
 - **Azure Bastion (Developer SKU)**: Free (for dev/test scenarios)
-- **Private Endpoint**: ~$10/month
-- **Storage Account**: ~$2/month
 - **Bandwidth**: Variable based on usage
 
-**Estimated total**: ~$177/month (when running 24/7)
+**Estimated total**: ~$165/month (when running 24/7)
 
 **Note:** The Developer SKU is free and perfect for dev/test scenarios. It supports one concurrent connection and does not require a public IP address or dedicated subnet, reducing both cost and complexity.
 

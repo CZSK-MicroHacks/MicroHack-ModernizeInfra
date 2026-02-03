@@ -5,7 +5,7 @@
 ### Deployment
 
 ```bash
-# Deploy VM (creates storage account and installs extension automatically)
+# Deploy VM (installs extension automatically with scripts from GitHub)
 cd init-vm
 ./deploy-vm.sh
 
@@ -14,12 +14,6 @@ az vm show --resource-group rg-modernize-hackathon --name vm-onprem-simulator --
 
 # Check Custom Script Extension status (automated setup)
 az vm extension list --resource-group rg-modernize-hackathon --vm-name vm-onprem-simulator --query "[].{Name:name, State:provisioningState}" -o table
-
-# Get VM public IP
-az vm show --resource-group rg-modernize-hackathon --name vm-onprem-simulator --show-details --query "publicIps" -o tsv
-
-# Get storage account name
-az storage account list --resource-group rg-modernize-hackathon --query "[0].name" -o tsv
 ```
 
 ### On VM - Setup (Optional - already done automatically)
@@ -119,8 +113,7 @@ az group delete --name rg-modernize-hackathon --yes --no-wait
 | VM Name | vm-onprem-simulator |
 | VM Size | Standard_D4s_v3 |
 | OS | Windows Server 2022 |
-| Storage Account | Auto-generated (st<rg-name><random>) |
-| Storage Container | scripts (private with SAS token access) |
+| Script Source | GitHub (public repository) |
 | SQL Instance 1 | localhost,1433 |
 | SQL Instance 2 | localhost,1434 |
 | SA Password | YourStrongPass123! |
