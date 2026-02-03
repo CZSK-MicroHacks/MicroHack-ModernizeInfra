@@ -49,7 +49,7 @@ try
     await customerDb.Database.EnsureCreatedAsync();
     await orderDb.Database.EnsureCreatedAsync();
 }
-catch (SqlException ex)
+catch (Exception ex) when (ex is SqlException || ex is DbUpdateException)
 {
     app.Logger.LogError(
         ex,
