@@ -76,7 +76,7 @@ $appSettings = @{
     "AllowedHosts" = "*"
     "ConnectionStrings" = @{
         "CustomerDatabase" = "Server=localhost,1433;Database=CustomerDB;User Id=sa;Password=$SqlPassword;TrustServerCertificate=True;Encrypt=False;"
-        "OrderDatabase" = "Server=localhost,1434;Database=OrderDB;User Id=sa;Password=$SqlPassword;TrustServerCertificate=True;Encrypt=False;"
+        "OrderDatabase" = "Server=localhost,1435;Database=OrderDB;User Id=sa;Password=$SqlPassword;TrustServerCertificate=True;Encrypt=False;"
     }
 } | ConvertTo-Json -Depth 10
 

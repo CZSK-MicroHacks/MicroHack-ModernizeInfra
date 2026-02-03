@@ -28,7 +28,7 @@ This MicroHack demonstrates a modernized infrastructure with:
 │       │                      │                            │
 │  ┌────▼─────────┐      ┌────▼─────────┐                  │
 │  │ SQL Server 1 │◄─────┤ SQL Server 2 │                  │
-│  │ (Port 1433)  │      │ (Port 1434)  │                  │
+│  │ (Port 1433)  │      │ (Port 1435)  │                  │
 │  │              │      │              │                  │
 │  │ CustomerDB   │      │   OrderDB    │                  │
 │  │              │      │              │                  │

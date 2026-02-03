@@ -46,7 +46,7 @@ Get-Service | Where-Object { $_.Name -like "*SQL*" }
 sqlcmd -S localhost,1433 -U sa -P YourStrongPass123! -Q "SELECT @@VERSION" -C
 
 # Test named instance
-sqlcmd -S localhost,1434 -U sa -P YourStrongPass123! -Q "SELECT @@VERSION" -C
+sqlcmd -S localhost,1435 -U sa -P YourStrongPass123! -Q "SELECT @@VERSION" -C
 
 # Test linked server
 sqlcmd -S localhost,1433 -U sa -P YourStrongPass123! -Q "EXEC sp_testlinkedserver 'MSSQL2_LINK'" -C
@@ -115,7 +115,7 @@ az group delete --name rg-modernize-hackathon --yes --no-wait
 | OS | Windows Server 2022 |
 | Script Source | GitHub (public repository) |
 | SQL Instance 1 | localhost,1433 |
-| SQL Instance 2 | localhost,1434 |
+| SQL Instance 2 | localhost,1435 |
 | SA Password | YourStrongPass123! |
 | App Port | 8080 |
 | Linked Server | MSSQL2_LINK |
@@ -127,7 +127,7 @@ az group delete --name rg-modernize-hackathon --yes --no-wait
 |------|---------|----------|
 | 3389 | RDP | TCP |
 | 1433 | SQL Server (default) | TCP |
-| 1434 | SQL Server (MSSQL2) | TCP |
+| 1435 | SQL Server (MSSQL2) | TCP |
 | 8080 | Application | TCP |
 
 ## Connection Strings
@@ -137,7 +137,7 @@ az group delete --name rg-modernize-hackathon --yes --no-wait
 Server=localhost,1433;Database=CustomerDB;User Id=sa;Password=YourStrongPass123!;TrustServerCertificate=True;Encrypt=False;
 
 # OrderDB
-Server=localhost,1434;Database=OrderDB;User Id=sa;Password=YourStrongPass123!;TrustServerCertificate=True;Encrypt=False;
+Server=localhost,1435;Database=OrderDB;User Id=sa;Password=YourStrongPass123!;TrustServerCertificate=True;Encrypt=False;
 ```
 
 ## Common Issues

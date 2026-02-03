@@ -30,7 +30,7 @@ Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope Process -Force
 **What it does:**
 - Downloads SQL Server 2022 Developer Edition
 - Installs default instance (MSSQLSERVER) on port 1433
-- Installs named instance (MSSQL2) on port 1434
+- Installs named instance (MSSQL2) on port 1435
 - Configures TCP/IP for both instances
 - Sets up Windows Firewall rules
 - Enables SQL Server authentication
@@ -40,7 +40,7 @@ Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope Process -Force
 - SA Password: `YourStrongPass123!`
 - Download Path: `C:\Temp\SQLServer`
 - Port 1433: Default instance
-- Port 1434: Named instance MSSQL2
+- Port 1435: Named instance MSSQL2
 
 ### 3. setup-databases.ps1
 **Database creation script** that sets up databases and sample data.
@@ -52,7 +52,7 @@ Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope Process -Force
 
 **What it does:**
 - Creates CustomerDB on default instance (port 1433)
-- Creates OrderDB on named instance (port 1434)
+- Creates OrderDB on named instance (port 1435)
 - Creates Customers table in CustomerDB
 - Creates Orders table in OrderDB
 - Inserts sample data for testing
@@ -81,7 +81,7 @@ Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope Process -Force
 **Linked Server Details:**
 - Name: MSSQL2_LINK
 - Source: localhost,1433 (CustomerDB)
-- Target: localhost,1434 (OrderDB)
+- Target: localhost,1435 (OrderDB)
 - View: CustomerDB.dbo.vw_CustomerOrders
 
 ### 5. deploy-application.ps1
@@ -104,7 +104,7 @@ Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope Process -Force
 **Application Configuration:**
 - Install Path: `C:\Apps\ModernizeInfraApp`
 - Port: 8080
-- Connection strings point to localhost,1433 and localhost,1434
+- Connection strings point to localhost,1433 and localhost,1435
 
 ## Execution Order
 
@@ -195,13 +195,13 @@ Get-EventLog -LogName Application -Newest 50 | Where-Object { $_.Source -like "*
 ### Test SQL Server Connectivity
 ```powershell
 sqlcmd -S localhost,1433 -U sa -P YourStrongPass123! -Q "SELECT @@VERSION" -C
-sqlcmd -S localhost,1434 -U sa -P YourStrongPass123! -Q "SELECT @@VERSION" -C
+sqlcmd -S localhost,1435 -U sa -P YourStrongPass123! -Q "SELECT @@VERSION" -C
 ```
 
 ### Test Databases
 ```powershell
 sqlcmd -S localhost,1433 -U sa -P YourStrongPass123! -Q "USE CustomerDB; SELECT COUNT(*) FROM Customers" -C
-sqlcmd -S localhost,1434 -U sa -P YourStrongPass123! -Q "USE OrderDB; SELECT COUNT(*) FROM Orders" -C
+sqlcmd -S localhost,1435 -U sa -P YourStrongPass123! -Q "USE OrderDB; SELECT COUNT(*) FROM Orders" -C
 ```
 
 ### Test Linked Server

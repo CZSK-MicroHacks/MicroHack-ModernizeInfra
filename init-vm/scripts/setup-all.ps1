@@ -116,7 +116,7 @@ Write-Host "==================================================" -ForegroundColor
 Write-Host ""
 Write-Host "Environment Details:" -ForegroundColor Cyan
 Write-Host "  SQL Server Instance 1: localhost,1433 (CustomerDB)" -ForegroundColor White
-Write-Host "  SQL Server Instance 2: localhost,1434 (OrderDB)" -ForegroundColor White
+Write-Host "  SQL Server Instance 2: localhost,1435 (OrderDB)" -ForegroundColor White
 Write-Host "  Linked Server: MSSQL2_LINK" -ForegroundColor White
 Write-Host "  Application Folder: C:\Apps\ModernizeInfraApp" -ForegroundColor White
 Write-Host ""

@@ -33,7 +33,7 @@ Successfully implemented a complete infrastructure for the app modernization mic
 #### Database 2: OrderDB
 - Stores order information (CustomerId, ProductName, Amount, OrderDate)
 - Primary key: OrderId (Identity)
-- Hosted on sqlserver2 container (port 1434)
+- Hosted on sqlserver2 container (port 1435)
 
 ### 3. Database Links
 - **Linked Server**: SQLSERVER2_LINK

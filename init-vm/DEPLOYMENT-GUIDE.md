@@ -195,7 +195,7 @@ cd C:\Setup\scripts
 **What this does:**
 - Downloads SQL Server 2022 Developer Edition
 - Installs default instance on port 1433
-- Installs named instance MSSQL2 on port 1434
+- Installs named instance MSSQL2 on port 1435
 - Configures TCP/IP and firewall rules
 - Enables SQL Server authentication
 
@@ -209,7 +209,7 @@ cd C:\Setup\scripts
 
 **What this does:**
 - Creates CustomerDB on default instance (port 1433)
-- Creates OrderDB on named instance (port 1434)
+- Creates OrderDB on named instance (port 1435)
 - Creates Customers and Orders tables
 - Inserts sample data
 
@@ -331,7 +331,7 @@ az vm extension set \
 
 3. **Test connectivity to named instance**
    ```powershell
-   sqlcmd -S localhost,1434 -U sa -P YourStrongPass123! -Q "SELECT @@VERSION" -C
+   sqlcmd -S localhost,1435 -U sa -P YourStrongPass123! -Q "SELECT @@VERSION" -C
    ```
 
 ### Verify Databases
@@ -341,7 +341,7 @@ az vm extension set \
 sqlcmd -S localhost,1433 -U sa -P YourStrongPass123! -Q "USE CustomerDB; SELECT COUNT(*) as CustomerCount FROM Customers" -C
 
 # Check OrderDB
-sqlcmd -S localhost,1434 -U sa -P YourStrongPass123! -Q "USE OrderDB; SELECT COUNT(*) as OrderCount FROM Orders" -C
+sqlcmd -S localhost,1435 -U sa -P YourStrongPass123! -Q "USE OrderDB; SELECT COUNT(*) as OrderCount FROM Orders" -C
 ```
 
 ### Verify Linked Server
@@ -409,7 +409,7 @@ sqlcmd -S localhost,1433 -U sa -P YourStrongPass123! -Q "USE CustomerDB; SELECT 
 3. Test port connectivity:
    ```powershell
    Test-NetConnection localhost -Port 1433
-   Test-NetConnection localhost -Port 1434
+   Test-NetConnection localhost -Port 1435
    ```
 
 4. Verify TCP/IP is enabled in SQL Server Configuration Manager
@@ -496,7 +496,7 @@ Application:
   
 SQL Server Instances:
   Instance 1: <VM-PUBLIC-IP>,1433
-  Instance 2: <VM-PUBLIC-IP>,1434
+  Instance 2: <VM-PUBLIC-IP>,1435
   SA Password: YourStrongPass123!
 
 Databases:

@@ -33,7 +33,7 @@ This repository contains a modern infrastructure setup for app modernization, fe
 
 #### Database 2: OrderDB (sqlserver2)
 - Stores order information
-- Port: 1434 (mapped from container port 1433)
+- Port: 1435 (mapped from container port 1433)
 - Tables: Orders
 
 ### 3. Database Links
@@ -236,7 +236,7 @@ The on-premises simulator creates:
 - Windows Server 2022 Azure VM (no public IP)
 - Azure Bastion for secure access
 - Azure Storage Account with private endpoint
-- SQL Server 2022 with two instances (ports 1433 and 1434)
+- SQL Server 2022 with two instances (ports 1433 and 1435)
 - CustomerDB and OrderDB with sample data
 - Linked server configuration
 - ASP.NET Core application running on the VM

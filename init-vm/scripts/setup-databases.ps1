@@ -155,7 +155,7 @@ GO
 $OrderDbFile = "$env:TEMP\setup-orderdb.sql"
 $OrderDbScript | Out-File -FilePath $OrderDbFile -Encoding ASCII
 
-& $SqlCmdPath -S "localhost,1434" -U sa -P $SqlPassword -i $OrderDbFile -C
+& $SqlCmdPath -S "localhost,1435" -U sa -P $SqlPassword -i $OrderDbFile -C
 
 Write-Host "✓ OrderDB created and populated" -ForegroundColor Green
 
@@ -168,7 +168,7 @@ Write-Host "Databases on default instance:" -ForegroundColor Cyan
 
 Write-Host ""
 Write-Host "Databases on named instance:" -ForegroundColor Cyan
-& $SqlCmdPath -S "localhost,1434" -U sa -P $SqlPassword -Q "SELECT name FROM sys.databases WHERE name IN ('CustomerDB', 'OrderDB')" -C
+& $SqlCmdPath -S "localhost,1435" -U sa -P $SqlPassword -Q "SELECT name FROM sys.databases WHERE name IN ('CustomerDB', 'OrderDB')" -C
 
 Write-Host ""
 Write-Host "=================================================="
@@ -177,6 +177,6 @@ Write-Host "=================================================="
 Write-Host "CustomerDB: localhost,1433"
 Write-Host "  - Customers table with sample data"
 Write-Host ""
-Write-Host "OrderDB: localhost,1434"
+Write-Host "OrderDB: localhost,1435"
 Write-Host "  - Orders table with sample data"
 Write-Host "=================================================="
