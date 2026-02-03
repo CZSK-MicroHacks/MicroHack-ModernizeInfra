@@ -131,19 +131,19 @@ try {
     $wmi1 = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer $env:COMPUTERNAME
     $uri1 = "ManagedComputer[@Name='$env:COMPUTERNAME']/ServerInstance[@Name='MSSQLSERVER']/ServerProtocol[@Name='Tcp']"
     $tcp1 = $wmi1.GetSmoObject($uri1)
+    $tcp1.IsEnabled = $true
+    $tcp1.Alter()
+    
+    # Set static port 1433
+    $ipAll1 = $tcp1.IPAddresses | Where-Object { $_.Name -eq "IPAll" }
+    $ipAll1.IPAddressProperties["TcpPort"].Value = "1433"
+    $ipAll1.IPAddressProperties["TcpDynamicPorts"].Value = ""
+    $tcp1.Alter()
 } catch {
     Write-Host "Error accessing ManagedComputer for default instance: $($_.Exception.Message)" -ForegroundColor Red
     Write-Host "Please verify SQL Server is installed and running." -ForegroundColor Yellow
     throw
 }
-$tcp1.IsEnabled = $true
-$tcp1.Alter()
-
-# Set static port 1433
-$ipAll1 = $tcp1.IPAddresses | Where-Object { $_.Name -eq "IPAll" }
-$ipAll1.IPAddressProperties["TcpPort"].Value = "1433"
-$ipAll1.IPAddressProperties["TcpDynamicPorts"].Value = ""
-$tcp1.Alter()
 
 Write-Host "✓ TCP/IP configured for default instance (port 1433)" -ForegroundColor Green
 
@@ -153,19 +153,19 @@ Write-Host "Configuring TCP/IP for named instance..." -ForegroundColor Yellow
 try {
     $uri2 = "ManagedComputer[@Name='$env:COMPUTERNAME']/ServerInstance[@Name='MSSQL2']/ServerProtocol[@Name='Tcp']"
     $tcp2 = $wmi1.GetSmoObject($uri2)
+    $tcp2.IsEnabled = $true
+    $tcp2.Alter()
+    
+    # Set static port 1434
+    $ipAll2 = $tcp2.IPAddresses | Where-Object { $_.Name -eq "IPAll" }
+    $ipAll2.IPAddressProperties["TcpPort"].Value = "1434"
+    $ipAll2.IPAddressProperties["TcpDynamicPorts"].Value = ""
+    $tcp2.Alter()
 } catch {
     Write-Host "Error accessing ManagedComputer for named instance: $($_.Exception.Message)" -ForegroundColor Red
     Write-Host "Please verify SQL Server named instance MSSQL2 is installed and running." -ForegroundColor Yellow
     throw
 }
-$tcp2.IsEnabled = $true
-$tcp2.Alter()
-
-# Set static port 1434
-$ipAll2 = $tcp2.IPAddresses | Where-Object { $_.Name -eq "IPAll" }
-$ipAll2.IPAddressProperties["TcpPort"].Value = "1434"
-$ipAll2.IPAddressProperties["TcpDynamicPorts"].Value = ""
-$tcp2.Alter()
 
 Write-Host "✓ TCP/IP configured for named instance (port 1434)" -ForegroundColor Green
 
