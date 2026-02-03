@@ -17,7 +17,7 @@ The init-vm setup creates:
 ✅ **VM has NO public IP address** - All access through Azure Bastion
 ✅ **Entra ID authentication enabled** - Use Azure AD credentials for VM access
 ✅ **Random generated password** - Strong password for local admin account
-✅ **Scripts from version-controlled source** - Setup scripts are downloaded from the public GitHub repository, ensuring version control, transparency, and with no embedded secrets in scripts
+✅ **Scripts embedded in deployment** - Setup scripts are embedded directly in the deployment without external downloads, ensuring reliability and security with no embedded secrets
 
 ## Architecture
 

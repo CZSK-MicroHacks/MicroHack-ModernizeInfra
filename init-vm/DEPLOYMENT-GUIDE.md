@@ -146,7 +146,22 @@ If you need to manually configure the VM or troubleshoot issues, you can connect
 
 1. **Open PowerShell as Administrator**
 
-2. **Download the scripts to the VM**
+2. **Option A: Use the consolidated inline script (Recommended)**
+   ```powershell
+   # Create temp folder
+   New-Item -ItemType Directory -Force -Path "C:\Temp"
+   cd C:\Temp
+   
+   # Download the consolidated setup script
+   Invoke-WebRequest -Uri "https://raw.githubusercontent.com/CZSK-MicroHacks/MicroHack-ModernizeInfra/main/init-vm/scripts/setup-all-inline.ps1" -OutFile "setup-all-inline.ps1"
+   
+   # Run the setup script
+   Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
+   $env:AUTOMATION_MODE = 'false'  # Enable interactive mode
+   .\setup-all-inline.ps1
+   ```
+
+   **Option B: Download individual scripts**
    ```powershell
    # Create folder for scripts
    New-Item -ItemType Directory -Force -Path "C:\Setup\scripts"
@@ -165,15 +180,13 @@ If you need to manually configure the VM or troubleshoot issues, you can connect
    foreach ($script in $scripts) {
        Invoke-WebRequest -Uri "$baseUrl/$script" -OutFile $script
    }
-   ```
-
-3. **Run the master setup script**
-   ```powershell
+   
+   # Run the master setup script
    Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope Process -Force
    .\setup-all.ps1
    ```
 
-4. **Wait for completion** (approximately 20-30 minutes)
+3. **Wait for completion** (approximately 20-30 minutes)
    - The script will install SQL Server
    - Create databases
    - Configure linked servers
@@ -290,30 +303,44 @@ For fully automated deployment using Azure VM Custom Script Extension that downl
 
 ### Deploy Custom Script Extension
 
-**Note:** The following example assumes you've defined the necessary variables. If running commands individually, first define the variables:
+**Note:** The Custom Script Extension now embeds the setup scripts directly without downloading from GitHub. This provides better security and reliability.
+
+The deployment script (`deploy-vm.sh`) handles this automatically by:
+1. Reading the consolidated setup script from the local repository
+2. Base64-encoding the script content
+3. Embedding it directly in the extension command
+
+If running commands manually, use the automated deployment script:
 
 ```bash
 # Define resource and VM names (adjust as needed)
 RESOURCE_GROUP="rg-modernize-hackathon"
 VM_NAME="vm-onprem-simulator"
 
-# Define script URLs
-GITHUB_BASE_URL="https://raw.githubusercontent.com/CZSK-MicroHacks/MicroHack-ModernizeInfra/main/init-vm/scripts"
-SETUP_ALL_URL="${GITHUB_BASE_URL}/setup-all.ps1"
-INSTALL_SQL_URL="${GITHUB_BASE_URL}/install-sql-server.ps1"
-SETUP_DATABASES_URL="${GITHUB_BASE_URL}/setup-databases.ps1"
-SETUP_LINKED_URL="${GITHUB_BASE_URL}/setup-linked-servers.ps1"
-DEPLOY_APP_URL="${GITHUB_BASE_URL}/deploy-application.ps1"
+# Navigate to the repository directory
+cd /path/to/MicroHack-ModernizeInfra/init-vm
 
-# Deploy Custom Script Extension
+# Read and encode the setup script
+SCRIPT_CONTENT_B64=$(cat scripts/setup-all-inline.ps1 | base64 -w 0)
+
+# Create wrapper command that decodes and executes the embedded script
+WRAPPER_CMD='$ErrorActionPreference="Stop";$env:AUTOMATION_MODE="true";$b64=[System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String(\"'${SCRIPT_CONTENT_B64}'\"));$f=\"$env:TEMP\setup-inline.ps1\";$b64|Out-File -FilePath $f -Encoding UTF8;Write-Host \"Executing embedded setup script...\";& $f'
+
+# Deploy Custom Script Extension with embedded script
 az vm extension set \
   --resource-group "$RESOURCE_GROUP" \
   --vm-name "$VM_NAME" \
   --name CustomScriptExtension \
   --publisher Microsoft.Compute \
-  --settings "{\"fileUris\":[\"$SETUP_ALL_URL\",\"$INSTALL_SQL_URL\",\"$SETUP_DATABASES_URL\",\"$SETUP_LINKED_URL\",\"$DEPLOY_APP_URL\"]}" \
-  --protected-settings "{\"commandToExecute\":\"powershell -ExecutionPolicy Bypass -Command \\\"\$env:AUTOMATION_MODE='true'; & .\\\\setup-all.ps1\\\"\"}"
+  --version 1.10 \
+  --protected-settings "{\"commandToExecute\":\"powershell -ExecutionPolicy Bypass -Command \\\"${WRAPPER_CMD}\\\"\"}"
 ```
+
+**Benefits of this approach:**
+- No external dependencies on GitHub for setup scripts
+- Setup scripts are version-controlled with the deployment code
+- Eliminates potential issues with GitHub availability or rate limits
+- Improved security by avoiding external script downloads
 
 ## Verification and Testing
 
