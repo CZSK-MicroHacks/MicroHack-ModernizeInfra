@@ -7,9 +7,9 @@
 
 $ErrorActionPreference = "Stop"
 
-Write-Host "========================================================" -ForegroundColor Cyan
+Write-Host "==================================================" -ForegroundColor Cyan
 Write-Host "  Master Setup Script - On-Premises Environment Simulator" -ForegroundColor Cyan
-Write-Host "========================================================" -ForegroundColor Cyan
+Write-Host "==================================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "This script will:" -ForegroundColor Yellow
 Write-Host "  1. Install SQL Server 2022 with two instances" -ForegroundColor Yellow
@@ -52,9 +52,9 @@ function Run-Step {
     )
     
     Write-Host ""
-    Write-Host "========================================================" -ForegroundColor Cyan
+    Write-Host "==================================================" -ForegroundColor Cyan
     Write-Host "  Step: $StepName" -ForegroundColor Cyan
-    Write-Host "========================================================" -ForegroundColor Cyan
+    Write-Host "==================================================" -ForegroundColor Cyan
     Write-Host ""
     Write-Log "Starting: $StepName"
     
@@ -110,9 +110,9 @@ $duration = $endTime - $startTime
 Write-Log "Master setup completed in $($duration.TotalMinutes) minutes"
 
 Write-Host ""
-Write-Host "========================================================" -ForegroundColor Green
+Write-Host "==================================================" -ForegroundColor Green
 Write-Host "  Setup Complete!" -ForegroundColor Green
-Write-Host "========================================================" -ForegroundColor Green
+Write-Host "==================================================" -ForegroundColor Green
 Write-Host ""
 Write-Host "Environment Details:" -ForegroundColor Cyan
 Write-Host "  SQL Server Instance 1: localhost,1433 (CustomerDB)" -ForegroundColor White
@@ -127,4 +127,4 @@ Write-Host "  3. Run: .\start-app.bat" -ForegroundColor White
 Write-Host "  4. Access: http://localhost:8080" -ForegroundColor White
 Write-Host ""
 Write-Host "Log file: $logFile" -ForegroundColor Cyan
-Write-Host "========================================================" -ForegroundColor Green
+Write-Host "==================================================" -ForegroundColor Green
