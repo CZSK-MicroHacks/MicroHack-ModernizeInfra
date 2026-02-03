@@ -1,4 +1,4 @@
-#
+﻿#
 # Deploy ASP.NET Core Application
 # Installs .NET SDK, publishes the application, and sets it up to run
 #

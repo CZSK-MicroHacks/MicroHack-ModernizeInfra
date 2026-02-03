@@ -1,4 +1,4 @@
-#
+﻿#
 # Setup Databases and Tables
 # Creates CustomerDB on default instance and OrderDB on named instance
 #

@@ -1,4 +1,4 @@
-#
+﻿#
 # Setup Linked Servers
 # Creates a linked server from default instance to named instance
 # and creates a cross-database view
