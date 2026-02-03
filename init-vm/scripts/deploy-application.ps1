@@ -46,7 +46,7 @@ if (-not $dotnetInstalled) {
     
     # Download .NET SDK installer
     $installerPath = "$env:TEMP\dotnet-sdk-installer.exe"
-    $installerUrl = "https://download.visualstudio.microsoft.com/download/pr/6224f00f-08da-4e7f-85b1-00d42c2bb3d3/b775de636b91e023574a0bbc291f705a/dotnet-sdk-9.0.100-win-x64.exe"
+    $installerUrl = "https://builds.dotnet.microsoft.com/dotnet/Sdk/9.0.100/dotnet-sdk-9.0.100-win-x64.exe"
     
     Write-Host "Downloading .NET SDK installer..." -ForegroundColor Cyan
     Invoke-WebRequest -Uri $installerUrl -OutFile $installerPath -UseBasicParsing
