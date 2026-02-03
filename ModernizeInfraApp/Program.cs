@@ -48,7 +48,7 @@ try
 {
     await customerDb.Database.EnsureCreatedAsync();
 }
-catch (Exception ex) when (ex is SqlException || ex is TimeoutException || ex is DbUpdateException)
+catch (Exception ex) when (ex is SqlException || ex is DbUpdateException)
 {
     app.Logger.LogError(
         ex,
@@ -60,7 +60,7 @@ try
 {
     await orderDb.Database.EnsureCreatedAsync();
 }
-catch (Exception ex) when (ex is SqlException || ex is TimeoutException || ex is DbUpdateException)
+catch (Exception ex) when (ex is SqlException || ex is DbUpdateException)
 {
     app.Logger.LogError(
         ex,
