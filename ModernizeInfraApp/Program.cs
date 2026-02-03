@@ -50,7 +50,10 @@ try
 }
 catch (Exception ex)
 {
-    app.Logger.LogError(ex, "Database initialization failed. Frontend remains available but data operations will fail until database connectivity is restored. Check connection strings and database availability.");
+    app.Logger.LogError(
+        ex,
+        "Database initialization failed. Frontend remains available but data operations will fail until database connectivity is restored. Hint: {Hint}",
+        "Check connection strings and database availability.");
 }
 
 app.MapControllers();
