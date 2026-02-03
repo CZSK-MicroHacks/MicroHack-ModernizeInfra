@@ -463,6 +463,8 @@ try {
 if (-not $dotnetInstalled) {
     Write-Host "Installing .NET SDK..." -ForegroundColor Yellow
     $installerPath = "$env:TEMP\dotnet-sdk-installer.exe"
+    # Note: Using .NET 9.0.100 SDK URL - this is hardcoded for this hackathon/demo
+    # In production, consider using a version-agnostic URL or parameterizing the version
     $installerUrl = "https://download.visualstudio.microsoft.com/download/pr/6224f00f-08da-4e7f-85b1-00d42c2bb3d3/b775de636b91e023574a0bbc291f705a/dotnet-sdk-9.0.100-win-x64.exe"
     Invoke-WebRequest -Uri $installerUrl -OutFile $installerPath -UseBasicParsing
     Start-Process -FilePath $installerPath -ArgumentList "/quiet", "/norestart" -Wait

@@ -320,8 +320,8 @@ VM_NAME="vm-onprem-simulator"
 # Navigate to the repository directory
 cd /path/to/MicroHack-ModernizeInfra/init-vm
 
-# Read and encode the setup script
-SCRIPT_CONTENT_B64=$(cat scripts/setup-all-inline.ps1 | base64 -w 0)
+# Read and encode the setup script (cross-platform compatible)
+SCRIPT_CONTENT_B64=$(cat scripts/setup-all-inline.ps1 | base64 | tr -d '\n')
 
 # Create wrapper command that decodes and executes the embedded script
 WRAPPER_CMD='$ErrorActionPreference="Stop";$env:AUTOMATION_MODE="true";$b64=[System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String(\"'${SCRIPT_CONTENT_B64}'\"));$f=\"$env:TEMP\setup-inline.ps1\";$b64|Out-File -FilePath $f -Encoding UTF8;Write-Host \"Executing embedded setup script...\";& $f'
