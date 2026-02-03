@@ -125,13 +125,15 @@ if ($null -eq $sqlPsModule) {
 Import-Module SqlServer -ErrorAction SilentlyContinue
 
 # Enable TCP/IP and set port for default instance
+# Note: Explicitly pass computer name to ManagedComputer constructor to avoid
+# "Attempt to retrieve data for object failed" errors with certain computer names
 try {
     $wmi1 = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer $env:COMPUTERNAME
     $uri1 = "ManagedComputer[@Name='$env:COMPUTERNAME']/ServerInstance[@Name='MSSQLSERVER']/ServerProtocol[@Name='Tcp']"
     $tcp1 = $wmi1.GetSmoObject($uri1)
 } catch {
     Write-Host "Error accessing ManagedComputer for default instance: $($_.Exception.Message)" -ForegroundColor Red
-    Write-Host "Attempting alternative configuration method..." -ForegroundColor Yellow
+    Write-Host "Please verify SQL Server is installed and running." -ForegroundColor Yellow
     throw
 }
 $tcp1.IsEnabled = $true
@@ -153,7 +155,7 @@ try {
     $tcp2 = $wmi1.GetSmoObject($uri2)
 } catch {
     Write-Host "Error accessing ManagedComputer for named instance: $($_.Exception.Message)" -ForegroundColor Red
-    Write-Host "Attempting alternative configuration method..." -ForegroundColor Yellow
+    Write-Host "Please verify SQL Server named instance MSSQL2 is installed and running." -ForegroundColor Yellow
     throw
 }
 $tcp2.IsEnabled = $true
