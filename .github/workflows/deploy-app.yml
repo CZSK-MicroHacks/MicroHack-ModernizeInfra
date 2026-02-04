@@ -72,16 +72,20 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    # Only run if Azure credentials are configured AND it's a push or manual trigger
-    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.AZURE_CREDENTIALS != ''
+    # Only run if it's a push or manual trigger
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    env:
+      AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
     
     steps:
     - name: Azure Login
+      if: env.AZURE_CREDENTIALS != ''
       uses: azure/login@v2
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
     
     - name: Deploy to Azure VM
+      if: env.AZURE_CREDENTIALS != ''
       run: |
         # Get VM details from secrets
         RESOURCE_GROUP="${{ secrets.AZURE_RESOURCE_GROUP }}"
