@@ -61,10 +61,30 @@ Successfully implemented a complete infrastructure for the app modernization mic
 **Files Created:**
 - `README.md` - Comprehensive setup and usage guide
 - `ARCHITECTURE.md` - Detailed architecture documentation
+- `DEPLOYMENT.md` - Complete automated deployment documentation
+- `QUICKSTART-DEPLOYMENT.md` - Quick reference for deployment
 - `start.sh` - Quick start script for Docker Compose
 - `test-api.sh` - API testing script with sample requests
 - `.dockerignore` - Docker build optimization
 - `.gitignore` - Git ignore patterns
+
+### 6. Automated Deployment System
+
+**GitHub Actions Workflows:**
+- `.github/workflows/build-app.yml` - Automated build and release workflow
+- `.github/workflows/deploy-app.yml` - Full CI/CD with Azure deployment
+
+**Deployment Scripts:**
+- `init-vm/scripts/update-application.ps1` - Manual update from GitHub releases
+- `init-vm/scripts/setup-auto-update.ps1` - Configure automatic updates
+
+**Features:**
+- Automatic building and packaging on code changes
+- GitHub Releases integration
+- Manual deployment option via PowerShell script
+- Scheduled automatic updates (daily at 2 AM)
+- Version tracking and rollback capability
+- Backup before deployment
 
 ## Quality Assurance
 
@@ -100,7 +120,7 @@ Successfully implemented a complete infrastructure for the app modernization mic
 
 ## How to Use
 
-### Quick Start
+### Quick Start with Docker
 ```bash
 # Clone and navigate to repository
 git clone https://github.com/CZSK-MicroHacks/MicroHack-ModernizeInfra.git
@@ -112,6 +132,31 @@ cd MicroHack-ModernizeInfra
 # Or manually
 docker compose up -d
 ```
+
+### Quick Start with Automated Deployment to VM
+
+**Initial Setup:**
+```bash
+# Deploy Azure VM with SQL Server
+cd init-vm
+./deploy-vm.sh
+```
+
+**Deploy Application Updates:**
+```powershell
+# On the VM - Manual update
+cd C:\Apps\ModernizeInfraApp
+.\update-application.ps1
+
+# Or setup automatic updates (runs daily at 2 AM)
+.\setup-auto-update.ps1
+```
+
+The automated deployment system will:
+1. Download the latest release from GitHub
+2. Backup the current version
+3. Deploy the new version
+4. Track version history
 
 ### Test the API
 ```bash
@@ -142,6 +187,9 @@ docker exec -it sqlserver1 /opt/mssql-tools18/bin/sqlcmd \
 5. **Developer Experience**: Quick start scripts and comprehensive documentation
 6. **Input Validation**: Production-ready API with proper validation
 7. **Security Awareness**: Clear documentation of security considerations
+8. **Automated Deployment**: CI/CD with GitHub Actions and automated VM deployment
+9. **Version Control**: Automatic versioning and rollback capability
+10. **Scheduled Updates**: Optional automatic updates for hands-free operation
 
 ## Production Considerations
 
@@ -162,16 +210,22 @@ The implementation includes documentation for production deployment:
 ✅ No security vulnerabilities
 ✅ Clean code with input validation
 ✅ Ready for deployment and demonstration
+✅ **Automated deployment system implemented**
+✅ **GitHub Actions CI/CD pipelines configured**
+✅ **Manual and scheduled update mechanisms**
+✅ **Complete deployment documentation**
 
 ## Files Summary
 
-Total files created/modified: 23
+Total files created/modified: 31
 - C# source files: 7
 - Configuration files: 3
 - SQL scripts: 1
 - Docker files: 2
-- Documentation: 3
+- Documentation: 5
 - Shell scripts: 2
+- PowerShell deployment scripts: 4
+- GitHub Actions workflows: 2
 - Support files: 5
 
 ## Next Steps for Users
@@ -179,13 +233,40 @@ Total files created/modified: 23
 1. Deploy the infrastructure using Docker Compose
 2. Test the API endpoints
 3. Verify database links functionality
-4. Customize for specific use cases
-5. Implement additional security measures for production
-6. Add monitoring and logging
-7. Scale as needed
+4. **Set up automated deployment on VM**
+5. **Configure scheduled updates (optional)**
+6. Customize for specific use cases
+7. Implement additional security measures for production
+8. Add monitoring and logging
+9. Scale as needed
+
+## Automated Deployment Workflow
+
+```
+Code Change → Push to GitHub
+              ↓
+         GitHub Actions
+         (Build & Test)
+              ↓
+         Create Release
+         (app-binaries.zip)
+              ↓
+    ┌─────────────────────┐
+    │                     │
+    ↓                     ↓
+Manual Update        Scheduled Update
+(PowerShell)        (Daily at 2 AM)
+    │                     │
+    └─────────┬───────────┘
+              ↓
+       Download & Deploy
+              ↓
+      Application Updated
+```
 
 ---
 
 **Status**: ✅ Complete and Ready for Use
 **Quality**: High - No security issues, validated build, comprehensive documentation
 **Maintainability**: Excellent - Clean code, well-documented, follows best practices
+**Deployment**: Automated - CI/CD with GitHub Actions, manual and scheduled updates available
