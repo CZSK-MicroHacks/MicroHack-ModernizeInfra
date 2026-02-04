@@ -68,7 +68,7 @@ function Deploy-Application {
     # Stop running application
     Write-Host "Stopping running application processes..." -ForegroundColor Yellow
     Get-Process -Name "dotnet" -ErrorAction SilentlyContinue | Where-Object { 
-        $_.Path -like "*ModernizeInfraApp*" -or $_.CommandLine -like "*ModernizeInfraApp*"
+        $_.Path -like "*ModernizeInfraApp*"
     } | Stop-Process -Force -ErrorAction SilentlyContinue
     Start-Sleep -Seconds 2
     

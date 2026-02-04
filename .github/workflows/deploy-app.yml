@@ -98,7 +98,7 @@ jobs:
         # Stop any running application
         Write-Host "Stopping application processes..." -ForegroundColor Yellow
         Get-Process -Name "dotnet" -ErrorAction SilentlyContinue | Where-Object { 
-            $_.Path -like "*ModernizeInfraApp*" -or $_.CommandLine -like "*ModernizeInfraApp*"
+            $_.Path -like "*ModernizeInfraApp*"
         } | Stop-Process -Force -ErrorAction SilentlyContinue
         Start-Sleep -Seconds 2
         
