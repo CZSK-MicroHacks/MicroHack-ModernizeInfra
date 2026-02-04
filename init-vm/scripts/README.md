@@ -106,6 +106,71 @@ Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope Process -Force
 - Port: 8080
 - Connection strings point to localhost,1433 and localhost,1435
 
+### 6. update-application.ps1 (NEW)
+**Automated application update script** that deploys the latest version from GitHub.
+
+**Usage:**
+```powershell
+.\update-application.ps1
+```
+
+**What it does:**
+- Fetches latest release from GitHub API
+- Downloads application binaries (app-binaries.zip)
+- Stops running application processes
+- Backs up current version
+- Deploys new version
+- Tracks deployed version
+- Execution time: 2-3 minutes
+
+**Configuration:**
+- GitHub Repository: CZSK-MicroHacks/MicroHack-ModernizeInfra
+- Application Folder: C:\Apps\ModernizeInfraApp
+- Backup Location: C:\Apps\ModernizeInfraApp.backup.*
+- Version Tracking: C:\Apps\ModernizeInfraApp\version.txt
+
+**Features:**
+- Automatic version detection (skips if already up-to-date)
+- Automatic backup before deployment
+- Rollback on failure
+- Interactive prompts (can be run manually or scheduled)
+
+### 7. setup-auto-update.ps1 (NEW)
+**Scheduled task configuration script** for automatic application updates.
+
+**Usage:**
+```powershell
+.\setup-auto-update.ps1
+```
+
+**What it does:**
+- Downloads latest update-application.ps1 script
+- Creates Windows Scheduled Task
+- Configures daily updates at 2:00 AM
+- Runs as SYSTEM account
+- Execution time: 1 minute
+
+**Task Configuration:**
+- Task Name: ModernizeInfraApp-AutoUpdate
+- Schedule: Daily at 2:00 AM
+- Run Level: Highest (Administrator)
+- Network: Only when network available
+
+**Management Commands:**
+```powershell
+# Run update immediately
+Start-ScheduledTask -TaskName "ModernizeInfraApp-AutoUpdate"
+
+# View task status
+Get-ScheduledTask -TaskName "ModernizeInfraApp-AutoUpdate"
+
+# Disable automatic updates
+Disable-ScheduledTask -TaskName "ModernizeInfraApp-AutoUpdate"
+
+# Remove automatic updates
+Unregister-ScheduledTask -TaskName "ModernizeInfraApp-AutoUpdate"
+```
+
 ## Execution Order
 
 **IMPORTANT:** Scripts must be run in this order:
@@ -116,6 +181,15 @@ Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope Process -Force
 4. `deploy-application.ps1` - Finally, deploy the application
 
 **OR** simply run `setup-all.ps1` which executes all scripts in the correct order.
+
+### Automated Updates (Optional)
+
+After initial setup, you can enable automatic updates:
+
+1. `update-application.ps1` - Manually update application from GitHub
+2. `setup-auto-update.ps1` - Configure scheduled automatic updates
+
+These scripts can be run at any time after the initial setup is complete.
 
 ## Requirements
 

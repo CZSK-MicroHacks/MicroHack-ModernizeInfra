@@ -47,11 +47,18 @@ jobs:
         path: ./publish/
     
     - name: Create Release
-      if: github.event_name == 'push'
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
       uses: softprops/action-gh-release@v1
       with:
-        tag_name: v${{ github.run_number }}
-        name: Release ${{ github.run_number }}
+        tag_name: build-${{ github.run_number }}
+        name: Build ${{ github.run_number }}
+        body: |
+          Automated build from commit ${{ github.sha }}
+          
+          **Commit Message:** ${{ github.event.head_commit.message }}
+          
+          **Deployment:**
+          Download `app-binaries.zip` and deploy to VM using `update-application.ps1` script.
         files: app-binaries.zip
         draft: false
         prerelease: false
