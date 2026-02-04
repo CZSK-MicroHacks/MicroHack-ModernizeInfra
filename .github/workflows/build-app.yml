@@ -15,6 +15,9 @@ env:
   DOTNET_VERSION: '10.0.x'
   APP_PATH: './ModernizeInfraApp'
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
