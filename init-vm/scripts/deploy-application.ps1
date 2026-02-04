@@ -18,7 +18,7 @@ Write-Host ""
 # Configuration
 $SqlPassword = "YourStrongPass123!"
 $AppFolder = "C:\Apps\ModernizeInfraApp"
-$DotNetVersion = "9.0" # Using .NET 9 SDK for compatibility
+$DotNetVersion = "10.0" # Using .NET 10 SDK for compatibility
 $AppPort = 8080
 
 # Create application folder
@@ -46,7 +46,7 @@ if (-not $dotnetInstalled) {
     
     # Download .NET SDK installer
     $installerPath = "$env:TEMP\dotnet-sdk-installer.exe"
-    $installerUrl = "https://builds.dotnet.microsoft.com/dotnet/Sdk/9.0.100/dotnet-sdk-9.0.100-win-x64.exe"
+    $installerUrl = "https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.100/dotnet-sdk-10.0.100-win-x64.exe"
     
     Write-Host "Downloading .NET SDK installer..." -ForegroundColor Cyan
     Invoke-WebRequest -Uri $installerUrl -OutFile $installerPath -UseBasicParsing
