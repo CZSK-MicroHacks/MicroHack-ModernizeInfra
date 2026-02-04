@@ -5,7 +5,7 @@ namespace ModernizeInfraApp.Data;
 
 public class CustomerDbContext : DbContext
 {
-    private const string ConnectionString = "Server=sqlserver1,1433;Database=CustomerDB;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;";
+    private const string ConnectionString = "Server=localhost,1433;Database=CustomerDB;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;";
 
     public CustomerDbContext(DbContextOptions<CustomerDbContext> options)
         : base(options)
