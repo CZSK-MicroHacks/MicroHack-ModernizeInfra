@@ -9,10 +9,10 @@ builder.Services.AddOpenApi();
 
 // Configure database contexts for two separate databases
 builder.Services.AddDbContext<CustomerDbContext>(options =>
-    options.UseSqlServer("Server=sqlserver1,1433;Database=CustomerDB;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;"));
+    options.UseSqlServer("Server=localhost,1433;Database=CustomerDB;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;"));
 
 builder.Services.AddDbContext<OrderDbContext>(options =>
-    options.UseSqlServer("Server=sqlserver2,1433;Database=OrderDB;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;"));
+    options.UseSqlServer("Server=localhost,1435;Database=OrderDB;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;"));
 
 var app = builder.Build();
 
