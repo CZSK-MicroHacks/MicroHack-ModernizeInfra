@@ -90,7 +90,7 @@ jobs:
         $AppFolder = "C:\Apps\ModernizeInfraApp"
         $TempZip = "$env:TEMP\app-binaries-$((Get-Date).Ticks).zip"
         $BackupFolder = "C:\Apps\ModernizeInfraApp.backup.$(Get-Date -Format 'yyyyMMdd-HHmmss')"
-        $ReleaseUrl = "https://github.com/CZSK-MicroHacks/MicroHack-ModernizeInfra/releases/download/v${{ github.run_number }}/app-binaries.zip"
+        $ReleaseUrl = "https://github.com/CZSK-MicroHacks/MicroHack-ModernizeInfra/releases/download/build-${{ github.run_number }}/app-binaries.zip"
         
         Write-Host "=== Starting Deployment Process ===" -ForegroundColor Cyan
         Write-Host "Release URL: $ReleaseUrl" -ForegroundColor Yellow
