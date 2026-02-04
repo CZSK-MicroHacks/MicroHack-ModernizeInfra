@@ -1,5 +1,9 @@
 name: Build and Package Application
 
+# This workflow builds the application and creates a GitHub Release
+# The deploy job is optional and requires Azure credentials to be configured
+# If Azure credentials are not set, the workflow will only build and create releases
+
 on:
   push:
     branches:
@@ -68,7 +72,8 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    # Only run if Azure credentials are configured AND it's a push or manual trigger
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.AZURE_CREDENTIALS != ''
     
     steps:
     - name: Azure Login
