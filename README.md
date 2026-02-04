@@ -198,6 +198,46 @@ Check the db-link-setup logs:
 docker-compose logs db-link-setup
 ```
 
+## Automated Deployment
+
+The application includes **automated deployment** capabilities to deploy updates to target VMs:
+
+### GitHub Actions CI/CD
+
+The repository includes GitHub Actions workflows that automatically:
+1. **Build** the application on every push to main
+2. **Test** the application (if tests exist)
+3. **Package** the application into `app-binaries.zip`
+4. **Publish** as a GitHub Release
+
+### Deployment to VM
+
+The application can be deployed to a target VM using:
+
+**Option 1: Manual Deployment (Recommended)**
+```powershell
+# On the target VM
+cd C:\Apps\ModernizeInfraApp
+.\update-application.ps1
+```
+
+**Option 2: Automatic Updates**
+```powershell
+# One-time setup on the target VM
+.\setup-auto-update.ps1
+# Application will automatically update daily at 2 AM
+```
+
+**Option 3: Azure VM Run Command (CI/CD)**
+- Configure Azure credentials in GitHub Secrets
+- Workflow automatically deploys to VM on push
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for complete documentation on:
+- GitHub Actions workflows
+- Deployment scripts
+- Scheduled automatic updates
+- Troubleshooting
+
 ## On-Premises Environment Simulator
 
 For the Migrate and Modernize hackathon, you can deploy a Windows Azure VM that simulates an on-premises environment with SQL Server and the application running directly on the VM (not in containers).
