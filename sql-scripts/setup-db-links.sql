@@ -35,7 +35,7 @@ EXEC sp_addlinkedsrvlogin
     @useself = 'FALSE',
     @locallogin = NULL,
     @rmtuser = 'sa',
-    @rmtpassword = 'YourStrong@Passw0rd';
+    @rmtpassword = 'YourStrongPass123!';
 GO
 
 -- Test the linked server connection

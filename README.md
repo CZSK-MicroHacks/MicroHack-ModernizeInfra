@@ -145,7 +145,7 @@ curl http://localhost:8080/api/orders
 Connect to sqlserver1 and query the cross-database view:
 
 ```bash
-docker exec -it sqlserver1 /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'YourStrong@Passw0rd' -C -Q "USE CustomerDB; SELECT * FROM vw_CustomerOrders;"
+docker exec -it sqlserver1 /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'YourStrongPass123!' -C -Q "USE CustomerDB; SELECT * FROM vw_CustomerOrders;"
 ```
 
 ## Stopping the Services
@@ -168,15 +168,15 @@ Connection strings are configured in `appsettings.json` and can be overridden vi
 ```json
 {
   "ConnectionStrings": {
-    "CustomerDatabase": "Server=sqlserver1,1433;Database=CustomerDB;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;",
-    "OrderDatabase": "Server=sqlserver2,1433;Database=OrderDB;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;"
+    "CustomerDatabase": "Server=sqlserver1,1433;Database=CustomerDB;User Id=sa;Password=YourStrongPass123!;TrustServerCertificate=True;",
+    "OrderDatabase": "Server=sqlserver2,1433;Database=OrderDB;User Id=sa;Password=YourStrongPass123!;TrustServerCertificate=True;"
   }
 }
 ```
 
 ### Security Notes
 
-⚠️ **Important**: The default SQL Server password (`YourStrong@Passw0rd`) is for development only. Change it for production use.
+⚠️ **Important**: The default SQL Server password (`YourStrongPass123!`) is for development only. Change it for production use.
 
 ## Troubleshooting
 

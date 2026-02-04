@@ -174,7 +174,7 @@ curl -X POST http://localhost:8080/api/customers \
 ```bash
 # Connect to SQL Server 1 and query the cross-database view
 docker exec -it sqlserver1 /opt/mssql-tools18/bin/sqlcmd \
-  -S localhost -U sa -P 'YourStrong@Passw0rd' -C \
+  -S localhost -U sa -P 'YourStrongPass123!' -C \
   -Q "USE CustomerDB; SELECT * FROM vw_CustomerOrders;"
 ```
 

@@ -5,7 +5,7 @@ services:
     container_name: sqlserver1
     environment:
       - ACCEPT_EULA=Y
-      - SA_PASSWORD=YourStrong@Passw0rd
+      - SA_PASSWORD=YourStrongPass123!
       - MSSQL_PID=Developer
     ports:
       - "1433:1433"
@@ -15,7 +15,7 @@ services:
     networks:
       - app-network
     healthcheck:
-      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P YourStrong@Passw0rd -C -Q 'SELECT 1' || exit 1"]
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P YourStrongPass123! -C -Q 'SELECT 1' || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -26,7 +26,7 @@ services:
     container_name: sqlserver2
     environment:
       - ACCEPT_EULA=Y
-      - SA_PASSWORD=YourStrong@Passw0rd
+      - SA_PASSWORD=YourStrongPass123!
       - MSSQL_PID=Developer
     ports:
       - "1435:1433"
@@ -36,7 +36,7 @@ services:
     networks:
       - app-network
     healthcheck:
-      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P YourStrong@Passw0rd -C -Q 'SELECT 1' || exit 1"]
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P YourStrongPass123! -C -Q 'SELECT 1' || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -59,7 +59,7 @@ services:
       echo 'Waiting for SQL Servers to be ready...' &&
       sleep 10 &&
       echo 'Setting up database links...' &&
-      /opt/mssql-tools18/bin/sqlcmd -S sqlserver1 -U sa -P YourStrong@Passw0rd -C -i /scripts/setup-db-links.sql &&
+      /opt/mssql-tools18/bin/sqlcmd -S sqlserver1 -U sa -P YourStrongPass123! -C -i /scripts/setup-db-links.sql &&
       echo 'Database links configured successfully!' &&
       sleep infinity
       "
@@ -73,8 +73,8 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
-      - ConnectionStrings__CustomerDatabase=Server=sqlserver1,1433;Database=CustomerDB;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;
-      - ConnectionStrings__OrderDatabase=Server=sqlserver2,1433;Database=OrderDB;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;
+      - ConnectionStrings__CustomerDatabase=Server=sqlserver1,1433;Database=CustomerDB;User Id=sa;Password=YourStrongPass123!;TrustServerCertificate=True;
+      - ConnectionStrings__OrderDatabase=Server=sqlserver2,1433;Database=OrderDB;User Id=sa;Password=YourStrongPass123!;TrustServerCertificate=True;
     ports:
       - "8080:8080"
     depends_on:

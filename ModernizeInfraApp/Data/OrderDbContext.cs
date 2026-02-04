@@ -5,7 +5,7 @@ namespace ModernizeInfraApp.Data;
 
 public class OrderDbContext : DbContext
 {
-    private const string ConnectionString = "Server=localhost,1435;Database=OrderDB;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;";
+    private const string ConnectionString = "Server=localhost,1435;Database=OrderDB;User Id=sa;Password=YourStrongPass123!;TrustServerCertificate=True;";
 
     public OrderDbContext(DbContextOptions<OrderDbContext> options)
         : base(options)
