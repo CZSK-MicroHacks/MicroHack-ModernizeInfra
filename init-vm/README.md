@@ -243,6 +243,68 @@ PowerShell script to:
 - Install as Windows Service or run as console app
 - Configure Windows Firewall for port 8080
 
+### 6. `scripts/update-application.ps1` (NEW)
+PowerShell script for automated application updates:
+- Fetches latest release from GitHub
+- Downloads and deploys application binaries
+- Backs up current version before updating
+- Can be run manually or scheduled
+
+### 7. `scripts/setup-auto-update.ps1` (NEW)
+PowerShell script to configure automatic updates:
+- Creates Windows Scheduled Task
+- Runs daily at 2 AM to check for updates
+- Fully automated deployment from GitHub
+
+## Automated Application Deployment
+
+The application supports **automated deployment** from GitHub:
+
+### Manual Update
+
+RDP into the VM and run:
+
+```powershell
+cd C:\Apps\ModernizeInfraApp
+.\update-application.ps1
+```
+
+This will:
+1. Check for the latest release on GitHub
+2. Download the application binaries
+3. Backup the current version
+4. Deploy the new version
+
+### Automatic Updates (Scheduled)
+
+Setup automatic updates (one-time):
+
+```powershell
+cd C:\Apps\ModernizeInfraApp
+.\setup-auto-update.ps1
+```
+
+This creates a scheduled task that:
+- Runs daily at 2:00 AM
+- Automatically checks for new releases
+- Downloads and deploys updates
+- No manual intervention needed
+
+Manage the scheduled task:
+
+```powershell
+# Run update immediately
+Start-ScheduledTask -TaskName "ModernizeInfraApp-AutoUpdate"
+
+# Disable automatic updates
+Disable-ScheduledTask -TaskName "ModernizeInfraApp-AutoUpdate"
+
+# Remove automatic updates
+Unregister-ScheduledTask -TaskName "ModernizeInfraApp-AutoUpdate"
+```
+
+**See [DEPLOYMENT.md](../DEPLOYMENT.md) for complete deployment documentation.**
+
 ## Manual Steps (For Learning)
 
 If you prefer to understand each step, follow the detailed manual deployment guide in [DEPLOYMENT-GUIDE.md](./DEPLOYMENT-GUIDE.md).
