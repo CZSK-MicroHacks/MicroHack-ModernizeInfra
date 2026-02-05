@@ -5,7 +5,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
-builder.Services.AddOpenApi();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 // Configure database contexts for two separate databases
 builder.Services.AddDbContext<CustomerDbContext>(options =>
@@ -19,7 +20,14 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger(options =>
+    {
+        options.RouteTemplate = "openapi/{documentName}.json";
+    });
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/openapi/v1.json", "ModernizeInfraApp v1");
+    });
 }
 
 // ANTI-PATTERN: Using default files without explicit configuration

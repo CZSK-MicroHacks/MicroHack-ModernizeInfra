@@ -1,12 +1,12 @@
 # Implementation Summary
 
 ## Overview
-Successfully implemented a complete infrastructure for the app modernization micro hack, featuring a .NET 10 application server with two SQL Server databases connected via database links.
+Successfully implemented a complete infrastructure for the app modernization micro hack, featuring a .NET 6 application server with two SQL Server databases connected via database links.
 
 ## What Was Built
 
-### 1. .NET 10 Web API Application
-- **Technology**: ASP.NET Core 10.0 with Entity Framework Core 10.0
+### 1. .NET 6 Web API Application
+- **Technology**: ASP.NET Core 6.0 with Entity Framework Core 6.0
 - **Architecture**: Two separate DbContexts for database isolation
 - **Features**:
   - RESTful API endpoints for Customers and Orders
@@ -47,14 +47,14 @@ Successfully implemented a complete infrastructure for the app modernization mic
 ### 4. Docker Infrastructure
 
 **Files Created:**
-- `Dockerfile` - Multi-stage build for .NET 10 application
+- `Dockerfile` - Multi-stage build for .NET 6 application
 - `docker-compose.yml` - Complete infrastructure orchestration
 
 **Services:**
 1. `sqlserver1` - SQL Server 2022 (CustomerDB)
 2. `sqlserver2` - SQL Server 2022 (OrderDB)
 3. `db-link-setup` - One-time setup for database links
-4. `app` - .NET 10 application server
+4. `app` - .NET 6 application server
 
 ### 5. Documentation & Utilities
 
@@ -180,7 +180,7 @@ docker exec -it sqlserver1 /opt/mssql-tools18/bin/sqlcmd \
 
 ## Technical Highlights
 
-1. **Modern .NET**: Uses the latest .NET 10 framework
+1. **Modern .NET**: Uses the .NET 6 framework
 2. **Database Isolation**: Separate databases with proper separation of concerns
 3. **Cross-Database Queries**: Demonstrates linked server capabilities
 4. **Container Orchestration**: Complete Docker Compose setup with health checks
@@ -202,7 +202,7 @@ The implementation includes documentation for production deployment:
 
 ## Success Criteria Met
 
-✅ .NET 10 application server implemented and functional
+✅ .NET 6 application server implemented and functional
 ✅ Two SQL Server databases configured
 ✅ Database links established and tested
 ✅ Complete Docker infrastructure

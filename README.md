@@ -5,22 +5,22 @@ Repository for CZ/SK MicroHack Infrastructure Modernization
 ## Overview
 
 This repository contains:
-1. **Modern Infrastructure Application** - .NET 10 Web API with SQL Server databases running in Docker
+1. **Modern Infrastructure Application** - .NET 6 Web API with SQL Server databases running in Docker
 2. **On-Premises Simulator** - Azure VM deployment scripts to simulate legacy on-premises environment
 
 ## Architecture
 
 This repository contains a modern infrastructure setup for app modernization, featuring:
 
-- **.NET 10 Web API Application** - A modern ASP.NET Core web API server
+- **.NET 6 Web API Application** - A modern ASP.NET Core web API server
 - **Two SQL Server Databases** - Customer and Order databases running in separate containers
 - **Database Links** - Configured linked servers for cross-database queries
 
 ## Components
 
-### 1. .NET 10 Application Server
-- ASP.NET Core Web API with .NET 10
-- Entity Framework Core 10.0 for database access
+### 1. .NET 6 Application Server
+- ASP.NET Core Web API with .NET 6
+- Entity Framework Core 6.0 for database access
 - RESTful API endpoints for Customers and Orders
 - OpenAPI/Swagger documentation
 
@@ -44,7 +44,7 @@ This repository contains a modern infrastructure setup for app modernization, fe
 ## Prerequisites
 
 - Docker and Docker Compose
-- .NET 10 SDK (for local development)
+- .NET 6 SDK (for local development)
 
 ## Quick Start
 
@@ -72,7 +72,7 @@ docker-compose ps
 
 ### Local Development
 
-1. Ensure .NET 10 SDK is installed:
+1. Ensure .NET 6 SDK is installed:
 ```bash
 dotnet --version
 ```

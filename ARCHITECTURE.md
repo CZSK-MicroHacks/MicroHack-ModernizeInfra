@@ -3,7 +3,7 @@
 ## System Overview
 
 This MicroHack demonstrates a modernized infrastructure with:
-- .NET 10 Web API Application Server
+- .NET 6 Web API Application Server
 - Two SQL Server 2022 Databases
 - Database Links for cross-database queries
 
@@ -15,7 +15,7 @@ This MicroHack demonstrates a modernized infrastructure with:
 │                      (app-network)                          │
 │                                                             │
 │  ┌────────────────┐                                        │
-│  │   .NET 10 App  │                                        │
+│  │   .NET 6 App   │                                        │
 │  │   (Port 8080)  │                                        │
 │  │                │                                        │
 │  │  Controllers:  │                                        │
@@ -48,11 +48,11 @@ This MicroHack demonstrates a modernized infrastructure with:
 
 ## Components
 
-### 1. .NET 10 Web API Application
+### 1. .NET 6 Web API Application
 
 **Technology Stack:**
-- ASP.NET Core 10.0
-- Entity Framework Core 10.0
+- ASP.NET Core 6.0
+- Entity Framework Core 6.0
 - OpenAPI/Swagger
 
 **Features:**
@@ -141,7 +141,7 @@ FROM
 1. **sqlserver1** - Primary SQL Server instance
 2. **sqlserver2** - Secondary SQL Server instance
 3. **db-link-setup** - One-time setup container for database links
-4. **app** - .NET 10 application server
+4. **app** - .NET 6 application server
 
 ### Service Dependencies
 

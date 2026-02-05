@@ -134,7 +134,7 @@ The VM will automatically:
 3. Configure two SQL Server instances (ports 1433 and 1435)
 4. Create CustomerDB and OrderDB databases with sample data
 5. Set up linked server configuration
-6. Install .NET 10 SDK and Runtime
+6. Install .NET 6 SDK and Runtime
 7. Download and deploy the ASP.NET Core application
 8. Start the application on port 8080
 
@@ -237,7 +237,7 @@ PowerShell script to:
 
 ### 5. `scripts/deploy-application.ps1`
 PowerShell script to:
-- Install .NET 10 SDK and Runtime
+- Install .NET 6 SDK and Runtime
 - Download the application binaries
 - Configure connection strings
 - Install as Windows Service or run as console app

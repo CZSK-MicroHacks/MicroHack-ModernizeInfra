@@ -64,7 +64,7 @@ services:
       sleep infinity
       "
 
-  # .NET 10 Application
+  # .NET 6 Application
   app:
     build:
       context: .
